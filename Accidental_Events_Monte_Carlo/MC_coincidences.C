@@ -6,7 +6,8 @@
 using namespace std;
 
 
-void MC_coincidences(double activity, double time){
+void MC_coincidences(double activity = 1000000.0, double time = 0.001){
+
 	TRandom2 *rand = new TRandom2(0);
 	int sample_size = activity*time;	
 	double tau = 142;	//measured in [ns]
