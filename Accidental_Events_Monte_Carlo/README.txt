@@ -2,14 +2,21 @@
 				MC_coincidences.C
 =====================================================================
 
-Makro do symulacji Monte-Carlo liczby zarejestrowanych "przypadowych" 
-event'ów.
+Macro for simulating number of accidental events using Monte-Carlo 
+method.
 
 
-Makro przyjmuje dwa argumenty:
+Macro takes following arguments:
 
-	1) activity - zmienna typu double; określa aktywność źródła
-			promieniowania w [Bq]; domyślna wartość to 1MBq;
+	1) activity - variable of type double; defines activity of the 
+			source of radiation, given in [Bq]. Defaut value is 1 MBq.
 			
-	2) time - okno czasowe pomiaru liczby event'ów, dane w [s];
-			domyślna wartość to 1 ms.
+	2) time - defines time length of measurement in [s].
+			Default value is 1 ms.
+
+	3) timeFrame - parameter defining maximum time difference in [s] 
+			between	mached creation and decay of ortho-positronium. 
+			If time difference exceeds this parameter, the match is 
+			discarded. When set to values <= 0.0, time difference is 
+			ignored when matching.
+			Default value is 0.0 

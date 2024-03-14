@@ -6,11 +6,11 @@
 using namespace std;
 
 
-void MC_coincidences(double activity = 1000000.0, double time = 0.001){
+void MC_coincidences(double activity = 1000000.0, double time = 0.001, double timeFrame = 0.0){
 
 	TRandom2 *rand = new TRandom2(0);
 	int sample_size = activity*time;	
-	double tau = 142;	//measured in [ns]
+	double tau = 142;	//measured in [ns] 
 	
 	vector<double> uniform, exponent, exp_sorted;
 	
@@ -32,7 +32,7 @@ void MC_coincidences(double activity = 1000000.0, double time = 0.001){
 	sort(exp_sorted.begin(), exp_sorted.end());
 	
 	//calculate percentage of mismatched creation-decay times
-	int matched = 1, mismatched = 0, pos = 0;
+	int matched = 0, mismatched = 0, pos = 0;
 	
 	for(int i = 0; i < sample_size-1; i++){
 		//move decay index to the one thats bigger than the creation time we are currently matching
@@ -40,6 +40,9 @@ void MC_coincidences(double activity = 1000000.0, double time = 0.001){
 	
 		//skip if the next time-stamp is a time of creation - can't be matched
 		if(uniform[i+1] < exp_sorted[pos]) continue;
+		
+		//skip if the match doesn't satisfy timeFrame parameter
+		if( (timeFrame > 0.0) && (exp_sorted[pos] - uniform[i] > timeFrame) ) continue;
 		
 		// if we have a mismatch - increment counter by 1
 		if( exp_sorted[i] != exponent[pos] ){ 
@@ -53,14 +56,29 @@ void MC_coincidences(double activity = 1000000.0, double time = 0.001){
 		matched++;
 	}
 	
-	//Last element - we only need to check whether there is such k that:
-	//		t_n < t_k' < t_n'
-	//
-	//where n = number of creations/decays. If it exists, we will have a mismatch; otherwise, a correct match.
-	//Since we only test for existence, we can just check k = n-1
-	if( exponent[sample_size-2] > uniform[sample_size-1] ){
-		mismatched++;
+	//handle last creation time matching
+	while(uniform[sample_size-1] > exp_sorted[pos]) pos++;
+	
+	if( (timeFrame > 0.0) && (exp_sorted[pos] - uniform[sample_size-1] < timeFrame) ){
+		matched++;
+		if( exp_sorted[sample_size-1] != exponent[pos]) {
+			mismatched++;		
+			cout << "Mismatch between t" << sample_size-1 << "=" << uniform[sample_size-1] << " and t";
+			cout << find(exponent.begin(), exponent.end(), exp_sorted[pos]) - exponent.begin() << "'=" << exp_sorted[pos] << endl;
+			cout << "Correct match: " << uniform[sample_size-1] << " and " << exponent[sample_size-1] << endl << endl;	
+		}
 	}
+	
+	if( timeFrame <= 0.0 ){
+		matched++;
+		if( exp_sorted[sample_size-1] != exponent[pos]) {
+			mismatched++;		
+			cout << "Mismatch between t" << sample_size-1 << "=" << uniform[sample_size-1] << " and t";
+			cout << find(exponent.begin(), exponent.end(), exp_sorted[pos]) - exponent.begin() << "'=" << exp_sorted[pos] << endl;
+			cout << "Correct match: " << uniform[sample_size-1] << " and " << exponent[sample_size-1] << endl << endl;	
+		}
+	}
+	
 	
 	cout << "All matches = " << matched << endl;
 	cout << "Mismatched = " << mismatched << endl;
