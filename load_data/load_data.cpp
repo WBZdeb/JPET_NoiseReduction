@@ -48,3 +48,9 @@ void load_data(const std::string inFile ="")
   histSelected->Draw("same");
   canv->SaveAs("bla.png");
 }
+
+int main()
+{
+  load_data("YOUR_FILE"); 
+  return 0;
+}
