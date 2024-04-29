@@ -9,25 +9,44 @@
 #endif
 
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <vector>
 #include <TTree.h>
 #include <TH1D.h>
 #include <TCanvas.h>
 #include <TFile.h>
 #include <cassert>
 #include <memory>
+
+#include "calc_lifetime.h"
 using namespace std;
 
 
 void DTW(){
 	gROOT->Reset();
-
-	std::string inFile = "flatTree_40800.unk.evt.root";
+	
+	//open and read file with flatTree paths
+	ifstream inFile("flatTrees.txt");
+	
+	if(!inFile.is_open() ){
+		cerr << "Error opening the file! Are you sure file 'flatTrees.txt' exists?" << endl;
+		return 1;
+	}	
+	
+	std::string filePath;
 	std::string treeName = "FlatTree";
-
+	
 	TChain chain(treeName.c_str());
-	chain.Add(inFile.c_str());
+	
+	while(getline(inFile, filePath)){
+		chain.Add(filePath.c_str());
+	}
+	
 	ROOT::RDataFrame df(chain);
+	
+	//close file
+	inFile.close();
 	
 	//3-hit Pickoff events, no scatters, has prompt
 	auto df_fltr = df.Filter("numberOfHits == 3 && isPickOff && !isScattered && containsPrompt");
@@ -43,7 +62,7 @@ void DTW(){
 	
 	//ture
 	std::unique_ptr<TCanvas> canv(new TCanvas("canv", "canv", 1920, 1080));
-	TH1F *histTrue = new TH1F("lifetime","lifetime",150,0,15);
+	TH1F *histTrue = new TH1F("lifetime_true","lifetime_true",150,-1000000,100000000);
 	
 	for (int i = 0; i < lf_True.size(); i++){
 		histTrue->Fill(lf_True[i]);
@@ -51,10 +70,15 @@ void DTW(){
 	histTrue->GetXaxis()->SetTitle("Lifetime");
 	histTrue->GetYaxis()->SetTitle("Count");
 	histTrue->Draw();
+	canv->SaveAs("lifetime_true.png");
 	
 	//acc
 	std::unique_ptr<TCanvas> canv2(new TCanvas("canv2", "canv2", 1920, 1080));
-	TH1F *histAcc = new TH1F("lifetime","lifetime",150,0,15);
+	TH1F *histAcc = new TH1F("lifetime_acc","lifetime_acc",150,-1000000,100000000);
+	
+	for (int i = 0; i < 20; i++){
+		cout << lf_Acc[i] << endl;
+	}
 	
 	for (int i = 0; i < lf_Acc.size(); i++){
 		histAcc->Fill(lf_Acc[i]);
@@ -62,9 +86,14 @@ void DTW(){
 	histAcc->GetXaxis()->SetTitle("Lifetime");
 	histAcc->GetYaxis()->SetTitle("Count");
 	histAcc->Draw();
+	canv2->SaveAs("lifetime_acc.png");
+	
+	
+	delete gROOT->FindObject("lifetime_true");
+	delete gROOT->FindObject("lifetime_acc");
 }
 
-
+/*
 vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
 	int timeRescale = 1;	//rescale time unit to seconds
 	int c = TMath::C();		//speed of light [m/s]
@@ -103,5 +132,5 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 	}
 	
 	return lifetimes;
-}
+}*/
 
