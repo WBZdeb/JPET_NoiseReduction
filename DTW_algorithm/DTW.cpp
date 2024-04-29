@@ -52,8 +52,8 @@ void DTW(){
 	auto df_fltr = df.Filter("numberOfHits == 3 && isPickOff && !isScattered && containsPrompt");
 	
 	//Split between true events and randoms
-	auto df_true = df.Filter("!isAcc");
-	auto df_acc = df.Filter("isAcc");
+	auto df_true = df_fltr.Filter("!isAcc");
+	auto df_acc = df_fltr.Filter("isAcc");
 	
 	
 	//Calculate and plot lifetimes
@@ -62,7 +62,7 @@ void DTW(){
 	
 	//ture
 	std::unique_ptr<TCanvas> canv(new TCanvas("canv", "canv", 1920, 1080));
-	TH1F *histTrue = new TH1F("lifetime_true","lifetime_true",150,-1000000,100000000);
+	TH1F *histTrue = new TH1F("lifetime_true","lifetime_true",150,-10,10);
 	
 	for (int i = 0; i < lf_True.size(); i++){
 		histTrue->Fill(lf_True[i]);
@@ -74,7 +74,7 @@ void DTW(){
 	
 	//acc
 	std::unique_ptr<TCanvas> canv2(new TCanvas("canv2", "canv2", 1920, 1080));
-	TH1F *histAcc = new TH1F("lifetime_acc","lifetime_acc",150,-1000000,100000000);
+	TH1F *histAcc = new TH1F("lifetime_acc","lifetime_acc",150,-10,10);
 	
 	for (int i = 0; i < 20; i++){
 		cout << lf_Acc[i] << endl;
