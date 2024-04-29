@@ -11,9 +11,9 @@
 
 
 vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
-	float timeRescale = 1;	//rescale time unit to seconds
+	float timeRescale = 1/1000;	//rescale time unit to seconds
 	float posRescale = 1;	//rescale position to centimeters
-	float c = TMath::C();		//speed of light [m/s]
+	float c = 30;		//speed of light [cm/ns]
 	auto time_Vec = *(df.Take<vector<float>>("time"));
 	auto x_Vec = *(df.Take<vector<float>>("x"));
 	auto y_Vec = *(df.Take<vector<float>>("y"));
