@@ -22,6 +22,22 @@
 #include "calc_lifetime.h"
 using namespace std;
 
+float get_origin_x(const vector<float>& x, const vector<float>& y, const  vector<float>& z, const vector<float>& time)
+{
+	float lenAB, origin[3] = {0.0, 0.0, 0.0};
+
+	float c = 30;		//speed of light [cm/ns]
+	float timeRescale = 1/1000;
+	vector<float> vecAB, pDist, d1, d2;
+        //determine decay origin
+        vecAB = { (x[1] - x[2]), (y[1] - y[2]), (z[1] - z[2]) };
+        lenAB = TMath::Sqrt( vecAB[0]*vecAB[0] + vecAB[1]*vecAB[1] + vecAB[2]*vecAB[2]);
+        origin[0] = x[1] + (0.5 + c*timeRescale*(time[1]-time[2]) / (2*lenAB) ) * vecAB[0];
+        //origin[1] = y[1] + (0.5 + c*timeRescale*(time[1]-time[2]) / (2*lenAB) ) * vecAB[1];
+        //origin[2] = z[1] + (0.5 + c*timeRescale*(time[1]-time[2]) / (2*lenAB) ) * vecAB[2];
+        return origin[0];
+}
+
 
 void DTW(){
 	gROOT->Reset();
@@ -31,7 +47,6 @@ void DTW(){
 	
 	if(!inFile.is_open() ){
 		cerr << "Error opening the file! Are you sure file 'flatTrees.txt' exists?" << endl;
-		return 1;
 	}	
 	
 	std::string filePath;
@@ -50,6 +65,7 @@ void DTW(){
 	
 	//3-hit Pickoff events, no scatters, has prompt
 	auto df_fltr = df.Filter("numberOfHits == 3 && isPickOff && !isScattered && containsPrompt");
+        auto df_vertex = df_fltr.Define("origin_x", get_origin_x, {"x", "y", "z", "time"});
 	
 	//Split between true events and randoms
 	auto df_true = df_fltr.Filter("!isAcc");
