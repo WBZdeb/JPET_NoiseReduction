@@ -11,7 +11,7 @@
 
 
 vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
-	float timeRescale = 1/1000;	//rescale time unit to seconds
+	float timeRescale = 1/1000;	//rescale time unit to nanoseconds
 	float c = 30;		//speed of light [cm/ns]
 	auto time_Vec = *(df.Take<vector<float>>("time"));
 	auto x_Vec = *(df.Take<vector<float>>("x"));
@@ -28,16 +28,23 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 	for (int i = 0; i < time_Vec.size(); i++){
 		//set index mapping based on prompt index
 		if(energy[i][0] > 511.0){
-			iMap[0] = 0; iMap[1] = 1; iMap[2] = 2;
+			iMap[0] = 0; 
+			if(time_Vec[i][1] > time_Vec[i][2]){ iMap[1] = 1; iMap[2] = 2;}
+			else { iMap[1] = 2; iMap[2] = 1;}
 		}
-		if(energy[i][1] > 511.0){
-			iMap[0] = 1; iMap[1] = 0; iMap[2] = 2;
+		else if(energy[i][1] > 511.0){
+			iMap[0] = 1;
+			if(time_Vec[i][0] > time_Vec[i][2]){ iMap[1] = 0; iMap[2] = 2;}
+			else { iMap[1] = 2; iMap[2] = 0;}
 		}
-		if(energy[i][2] > 511.0){
-			iMap[0] = 2; iMap[1] = 0; iMap[2] = 1;
+		else if(energy[i][2] > 511.0){
+			iMap[0] = 2;
+			if(time_Vec[i][0] > time_Vec[i][1]){ iMap[1] = 0; iMap[2] = 1;}
+			else { iMap[1] = 1; iMap[2] = 0;}
 		}
-		
-		std::cout << energy[i][iMap[0]] << "  " << energy[i][iMap[1]] << "  " << energy[i][iMap[2]] << std::endl;
+		else{
+			continue;
+		}
 	
 		//determine decay origin
 		vecAB = { (x_Vec[i][iMap[1]] - x_Vec[i][iMap[2]]), (y_Vec[i][iMap[1]] - y_Vec[i][iMap[2]]), (z_Vec[i][iMap[1]] - z_Vec[i][iMap[2]]) };
@@ -46,7 +53,7 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 		origin[0] = x_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[0];
 		origin[1] = y_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[1];
 		origin[2] = z_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[2];
-		//std::cout << origin[0] << "	" << origin[1] << "	" << origin[2] << std::endl;
+		std::cout << origin[0] << "	" << origin[1] << "	" << origin[2] << std::endl;
 	
 		//calculate "machine time" T
 		pDist = { x_Vec[i][iMap[0]] - origin[0], y_Vec[i][iMap[0]] - origin[1], z_Vec[i][iMap[0]] - origin[2] };
@@ -61,7 +68,7 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 		tFl2 = TMath::Sqrt( pDist[0]*pDist[0] + pDist[1]*pDist[1] + pDist[2]*pDist[2]) / c;
 		tEm2 = timeRescale*time_Vec[i][iMap[2]] - tFl2 - refTime;
 		
-		lifetimes.push_back( (tEm1 + tEm2)/2 - timeRescale*time_Vec[i][iMap[0]]);
+		lifetimes.push_back( (tEm1 + tEm2)/2 - (timeRescale*time_Vec[i][iMap[0]])-refTime);
 	}
 	
 	return lifetimes;

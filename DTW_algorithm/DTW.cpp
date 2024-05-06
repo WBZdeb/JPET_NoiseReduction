@@ -92,10 +92,6 @@ void DTW(){
 	std::unique_ptr<TCanvas> canv2(new TCanvas("canv2", "canv2", 1920, 1080));
 	TH1F *histAcc = new TH1F("lifetime_acc","lifetime_acc",150,-10,10);
 	
-	for (int i = 0; i < 20; i++){
-		cout << lf_Acc[i] << endl;
-	}
-	
 	for (int i = 0; i < lf_Acc.size(); i++){
 		histAcc->Fill(lf_Acc[i]);
 	}
