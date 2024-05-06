@@ -1,3 +1,4 @@
+/// guards
 #include <iostream>
 #include <vector>
 #include <TROOT.h>
@@ -9,6 +10,8 @@
 #undef R__HAS_VDT
 #endif
 
+//TAK NIE ROBIMY! -> namespace pollution
+using namespace std;
 
 vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
 	float timeRescale = 1/1000;	//rescale time unit to nanoseconds
