@@ -105,3 +105,8 @@ void DTW(){
 	delete gROOT->FindObject("lifetime_acc");
 }
 
+int main()
+{
+  DTW();
+  return 0;  
+}
