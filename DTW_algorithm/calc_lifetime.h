@@ -1,4 +1,7 @@
 /// guards
+#ifndef CALC_LIFETIME
+#define CALC_LIFETIME
+
 #include <iostream>
 #include <vector>
 #include <TROOT.h>
@@ -11,7 +14,7 @@
 #endif
 
 //TAK NIE ROBIMY! -> namespace pollution
-using namespace std;
+//using namespace std;
 
 vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
 	float timeRescale = 1/1000;	//rescale time unit to nanoseconds
@@ -53,10 +56,10 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 		vecAB = { (x_Vec[i][iMap[1]] - x_Vec[i][iMap[2]]), (y_Vec[i][iMap[1]] - y_Vec[i][iMap[2]]), (z_Vec[i][iMap[1]] - z_Vec[i][iMap[2]]) };
 		lenAB = TMath::Sqrt( vecAB[0]*vecAB[0] + vecAB[1]*vecAB[1] + vecAB[2]*vecAB[2]);
 		
-		origin[0] = x_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[0];
-		origin[1] = y_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[1];
-		origin[2] = z_Vec[i][iMap[1]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[2];
-		std::cout << origin[0] << "	" << origin[1] << "	" << origin[2] << std::endl;
+		origin[0] = x_Vec[i][iMap[2]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[0];
+		origin[1] = y_Vec[i][iMap[2]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[1];
+		origin[2] = z_Vec[i][iMap[2]] + (0.5 + c*timeRescale*(time_Vec[i][iMap[1]]-time_Vec[i][iMap[2]]) / (2*lenAB) ) * vecAB[2];
+		//std::cout << origin[0] << "	" << origin[1] << "	" << origin[2] << std::endl;
 	
 		//calculate "machine time" T
 		pDist = { x_Vec[i][iMap[0]] - origin[0], y_Vec[i][iMap[0]] - origin[1], z_Vec[i][iMap[0]] - origin[2] };
@@ -71,8 +74,11 @@ vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilt
 		tFl2 = TMath::Sqrt( pDist[0]*pDist[0] + pDist[1]*pDist[1] + pDist[2]*pDist[2]) / c;
 		tEm2 = timeRescale*time_Vec[i][iMap[2]] - tFl2 - refTime;
 		
-		lifetimes.push_back( (tEm1 + tEm2)/2 - (timeRescale*time_Vec[i][iMap[0]])-refTime);
+		lifetimes.push_back( (tEm1 + tEm2)/2);
 	}
 	
 	return lifetimes;
 }
+
+
+#endif
