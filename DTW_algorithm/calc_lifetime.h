@@ -16,18 +16,18 @@
 //TAK NIE ROBIMY! -> namespace pollution
 //using namespace std;
 
-vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
+std::vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
 	float timeRescale = 1/1000;	//rescale time unit to nanoseconds
 	float c = 30;		//speed of light [cm/ns]
-	auto time_Vec = *(df.Take<vector<float>>("time"));
-	auto x_Vec = *(df.Take<vector<float>>("x"));
-	auto y_Vec = *(df.Take<vector<float>>("y"));
-	auto z_Vec = *(df.Take<vector<float>>("z"));
-	auto energy = *(df.Take<vector<float>>("energy"));
-	vector<float> lifetimes;	//vector for calculated lifetimes
+	auto time_Vec = *(df.Take<std::vector<float>>("time"));
+	auto x_Vec = *(df.Take<std::vector<float>>("x"));
+	auto y_Vec = *(df.Take<std::vector<float>>("y"));
+	auto z_Vec = *(df.Take<std::vector<float>>("z"));
+	auto energy = *(df.Take<std::vector<float>>("energy"));
+	std::vector<float> lifetimes;	//vector for calculated lifetimes
 	
 	float tFl1, tFl2, tEm1, tEm2, refTime, lenAB, origin[3] = {0.0, 0.0, 0.0};
-	vector<float> vecAB, pDist, d1, d2;
+	std::vector<float> vecAB, pDist, d1, d2;
 	int iMap[3] = {0, 1, 2};
 
 	
