@@ -90,17 +90,20 @@ void DTW(){
 	inFile.close();
 	
 	//3-hit Pickoff events, no scatters, has prompt
-	auto df_fltr = df.Filter("numberOfHits == 3 && !isPickOff && !isScattered && containsPrompt");
+	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
 	
 	//Split between true events and randoms
 	auto df_true = df_fltr.Filter("!isAcc");
 	auto df_acc = df_fltr.Filter("isAcc");
 	
+	df_true.Snapshot(treeName.c_str(), "out.root");
+	//auto report = df_true.Report();
+	
 	//Histo of origin points
 	auto df_vertex = df_true.Define("origin_x", get_origin_x, {"x", "y", "z", "time"}).Define("origin_y", get_origin_y, {"x", "y", "z", "time"}).Define(
 						"origin_z", get_origin_z, {"x", "y", "z", "time"});
 	std::unique_ptr<TCanvas> origin(new TCanvas("origin", "origin", 1920, 1080));
-	auto hist_orig = df_vertex.Histo2D({"Origin", "Origin", 300, -60, 60, 300, -60, 60}, "origin_x", "origin_y");
+	auto hist_orig = df_vertex.Histo2D({"Origin", "Origin", 30, -60, 60, 30, -60, 60}, "origin_x", "origin_y");
 	hist_orig->GetXaxis()->SetTitle("Pos X");
 	hist_orig->GetYaxis()->SetTitle("Pos Y");
 	hist_orig->Draw();
