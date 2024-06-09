@@ -81,4 +81,65 @@ std::vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJitte
 }
 
 
+void DTW_type1(ROOT::RDataFrame df){
+	const float lookahead = 5000, energyTH = 350.0;
+	auto time_Vec = *(df.Take<std::vector<float>>("time"));
+	auto energy = *(df.Take<std::vector<float>>("energy"));
+	auto window_num = *(df.Take<int>("timeWindowNumber"));
+	
+	int event_num = 0, coinc_num = 0, lw = window_num.back();
+	int cw, iStart, iEnd;
+	
+	//vector of vectors for tagging paired hits
+	std::vector<std::vector<int>> paired = {};
+	
+	for(int i = 0; i < time_Vec.size(); i++){
+		std::vector<int> v(time_Vec[i].size(), 0);
+		paired.push_back(v);
+	}
+	
+	for(int out = 0; out < time_Vec.size(); out++){
+		for(int in = 0; in < time_Vec[out].size(); in++){
+			event_num++;
+			//Exit when at the second-to-last window; skip paired hits or prompts
+			if(window_num[event_num-1] == (lw-1)) break;
+			if(paired[out][in] == 1) break;
+			if(energy[out][in] > energyTH) break;
+			
+			//set range of indexes to search for coincidence
+			cw = window_num[event_num-1];
+			for(int i = (out + 1); i < time_Vec.size(); i++){
+				if(time_Vec[i][0] == (cw+2)){
+					iStart = i;
+					if(cw == lw){
+						iEnd = time_Vec.size();
+						break;
+					}
+				}
+				if(time_Vec[i][0] == (cw+3)){
+					iEnd = i;
+					break;
+				}
+			}
+			
+			//look for match
+			for(int j = iStart; j < iEnd; j++){
+				for(int k = 0; k < time_Vec[j].size(); k++){
+					if(paired[j][k] == 1) break;
+					if(energy[j][k] > energyTH) break;
+					if( (time_Vec[j][k] - time_Vec[out][in]) < lookahead){
+						coinc_num+=2;
+						paired[out][in] = 1;
+						paired[j][k] = 1;
+					}
+				}
+			}
+		}
+	}
+	std::cout << "All hits: " << event_num << std::endl;
+	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
+	std::cout << "Percentage: " << coinc_num/event_num << "%" << std::endl;
+}
+
+
 #endif

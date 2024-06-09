@@ -89,6 +89,9 @@ void DTW(){
 	//close file
 	inFile.close();
 	
+	//Random coincidences (type 1)
+	//DTW_type1(df);
+	
 	//3-hit Pickoff events, no scatters, has prompt
 	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
 	
