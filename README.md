@@ -6,5 +6,4 @@ Rozwój metod redukcji szumów w detektorze JPET
 ## DTW_algorithm
 
 **Running**: to run the algorithm, use the following command:
-
-  $ root DTW.cpp
+> $ root DTW.cpp
