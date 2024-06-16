@@ -90,7 +90,9 @@ void DTW(){
 	inFile.close();
 	
 	//Random coincidences (type 1)
-	DTW_type1(df);
+	for (int i = 2; i < 6; i++){
+		DTW_type1(df, i);
+	}
 	
 	//3-hit Pickoff events, no scatters, has prompt
 	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
@@ -98,6 +100,11 @@ void DTW(){
 	//Split between true events and randoms
 	auto df_true = df_fltr.Filter("!isAcc");
 	auto df_acc = df_fltr.Filter("isAcc");
+	
+	//Random coincidences (type 1)
+	for (int i = 3; i < 6; i++){
+		DTW_type1(df_true, i);
+	}
 	
 	df_true.Snapshot(treeName.c_str(), "out.root");
 	//auto report = df_true.Report();

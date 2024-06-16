@@ -3,6 +3,7 @@
 #define CALC_LIFETIME
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <TROOT.h>
 #ifdef R__HAS_VDT
@@ -16,7 +17,12 @@
 //TAK NIE ROBIMY! -> namespace pollution
 //using namespace std;
 
-std::vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJittedFilter, void> df){
+using RDF = ROOT::RDataFrame;
+using RNode = ROOT::RDF::RNode;
+
+std::vector<float> calc_lifetime(RNode rnode){
+	auto df = rnode;
+
 	float timeRescale = 1.0/1000.0;	//rescale time unit to nanoseconds
 	const float energyTH = 350.0;
 	float c = 30;		//speed of light [cm/ns]
@@ -80,7 +86,10 @@ std::vector<float> calc_lifetime(ROOT::RDF::RInterface<ROOT::Detail::RDF::RJitte
 	return lifetimes;
 }
 
-void DTW_type1(ROOT::RDataFrame df){
+void DTW_type1(RNode rnode, int skips){
+	auto df = rnode;
+	if(skips < 1) skips = 1;
+
 	const float lookahead = 5000, energyTH = 350.0;
 	auto time_Vec = *(df.Take<std::vector<float>>("time"));
 	auto energy = *(df.Take<std::vector<float>>("energy"));
@@ -88,6 +97,7 @@ void DTW_type1(ROOT::RDataFrame df){
 	
 	int event_num = 0, coinc_num = 0, lw = window_num.back();
 	int cw, iStart, iEnd;
+	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
@@ -96,11 +106,16 @@ void DTW_type1(ROOT::RDataFrame df){
 		paired.push_back(v);
 	}
 	
+	if(skips == 2) {	
+		stats.open("DTW_stats.txt");
+		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
+	}
+	
 	for(int i = 0; i < time_Vec.size(); i++){
 		for(int j = 0; j < time_Vec[i].size(); j++){
 		//Exit when at the second-to-last window; skip paired hits or prompts
 			event_num++;
-			if(window_num[i] == (lw-1)) continue;
+			if(window_num[i] == (lw-skips+1)) continue;
 			if(paired[i][j] == 1) continue;
 			if(energy[i][j] > energyTH) continue;
 				
@@ -108,15 +123,23 @@ void DTW_type1(ROOT::RDataFrame df){
 				
 			//look for match
 			for(int k = (i+1); k < time_Vec.size(); k++){
-				if(window_num[k] > (cw+2)) break;
+				if(paired[i][j] == 1) break;
+				if(window_num[k] > (cw+skips)) break;
+				if(window_num[k] < (cw+skips)) continue;
 				
 				for(int l = 0; l < time_Vec[k].size(); l++){
+					if(paired[i][j] == 1) break;
 					if(paired[k][l] == 1) continue;
 					if(energy[k][l] > energyTH) continue;
-					if( (time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						coinc_num+=1;
+					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
+						coinc_num+=2;
 						paired[i][j] = 1;
 						paired[k][l] = 1;
+						
+						if(skips == 2){
+							stats << coinc_num << "   |   " << cw << "   |   " << time_Vec[i][j] << "   |   " << energy[i][j] << "\n";
+							stats << coinc_num << "   |   " << window_num[k] << "   |   " << time_Vec[k][l] << "   |   " << energy[k][l] << "\n";
+						}
 					}
 				}
 			}
@@ -125,6 +148,8 @@ void DTW_type1(ROOT::RDataFrame df){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+	
+	if(skips == 2) stats.close();
 }
 
 
