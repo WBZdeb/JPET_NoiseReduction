@@ -95,8 +95,8 @@ void DTW_type1(RNode rnode, int skips){
 	auto energy = *(df.Take<std::vector<float>>("energy"));
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
 	
-	int event_num = 0, coinc_num = 0, lw = window_num.back();
-	int cw, iStart, iEnd;
+	int event_num = 0, coinc_num = 0, lw;
+	int cw, wPrev = window_num[0], wNum = 1;
 	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
@@ -110,6 +110,18 @@ void DTW_type1(RNode rnode, int skips){
 		stats.open("DTW_stats.txt");
 		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
 	}
+	
+	//Re-mapping of window numbers to avoid gaps
+	for(int wInd = 0; wInd < window_num.size(); wInd++){
+		if(window_num[wInd] == wPrev) {
+			window_num[wInd] = wNum;
+		} else {
+			wPrev = window_num[wInd];
+			wNum++;
+			window_num[wInd] = wNum;
+		}
+	}
+	lw = window_num.back();
 	
 	for(int i = 0; i < time_Vec.size(); i++){
 		for(int j = 0; j < time_Vec[i].size(); j++){

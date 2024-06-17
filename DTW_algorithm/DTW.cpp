@@ -89,6 +89,8 @@ void DTW(){
 	//close file
 	inFile.close();
 	
+	
+	std::cout << 100.0*(*(df.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df.Take<int>("eventNumber"))).size() << std::endl;
 	//Random coincidences (type 1)
 	for (int i = 2; i < 6; i++){
 		DTW_type1(df, i);
