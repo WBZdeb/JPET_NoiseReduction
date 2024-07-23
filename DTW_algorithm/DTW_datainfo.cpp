@@ -46,6 +46,7 @@ void DTW_datainfo(){
 	//close file
 	inFile.close();
 	
+	
 	//========================
 	//	Info about data
 	//========================
@@ -70,6 +71,37 @@ void DTW_datainfo(){
 	double runtime = 0.00005 * window_count;	//[s]
 	std::cout << "Registered source activity: "	<< 1022681.0/runtime << " Bq" << std::endl;
 	
+	
+	//========================
+	//	Histograms
+	//========================
+	
+	ofstream hitsFile("Filter_hist/Hit_count.txt");
+	
+	if(!hitsFile.is_open() ){
+		cerr << "Error opening the file! Are you sure file 'Filter_hist/Hit_count.txt' exists?" << endl;
+	}
+	
+	std::vector<const char*> saveLocation = {"Filter_hist/isPickOff.png", "Filter_hist/Cut_1.png", "Filter_hist/Cut_2.png", "Filter_hist/Cut_3.png", "Filter_hist/Cut_4.png"};
+	std::vector<std::string> filters = {"(isPickOff)", "(!isScattered)", "(!isSecondary)", "(containsPrompt)", "(numberOfHits == 3)"};
+	auto df_filt = df.Filter("isPickOff");
+	
+	hitsFile << "Event count:		" << (*(df.Take<int>("eventNumber"))).size() << std::endl;
+	
+	for(int i = 0; i < filters.size(); i++){
+		auto filt = filters[i];
+		df_filt = df_filt.Filter(filt);
+		hitsFile << "After " << filt << ": " << (*(df_filt.Take<int>("eventNumber"))).size() << std::endl;
+		
+		//histogram
+		std::unique_ptr<TCanvas> histo(new TCanvas("Hit multiplicity", "Hit multiplicity", 1920, 1080));
+		auto hist = df_filt.Histo1D({"numberOfHits", "numberOfHits", 7, -0, 7}, "numberOfHits");
+		hist->GetXaxis()->SetTitle("numberOfHits");
+		hist->Draw();
+		histo->SaveAs(saveLocation[i]);
+	}
+	
+	hitsFile.close();
 }
 
 int main()
