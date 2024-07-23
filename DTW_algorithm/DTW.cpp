@@ -90,11 +90,9 @@ void DTW(){
 	inFile.close();
 	
 	
-	std::cout << 100.0*(*(df.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df.Take<int>("eventNumber"))).size() << std::endl;
-	//Random coincidences (type 1)
-	for (int i = 2; i < 6; i++){
-		DTW_type1(df, i);
-	}
+	//========================
+	//	Data filtering
+	//========================
 	
 	//3-hit Pickoff events, no scatters, has prompt
 	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
@@ -111,6 +109,11 @@ void DTW(){
 	df_true.Snapshot(treeName.c_str(), "out.root");
 	//auto report = df_true.Report();
 	
+	
+	//========================
+	//	Plotting results
+	//========================
+	
 	//Histo of origin points
 	auto df_vertex = df_true.Define("origin_x", get_origin_x, {"x", "y", "z", "time"}).Define("origin_y", get_origin_y, {"x", "y", "z", "time"}).Define(
 						"origin_z", get_origin_z, {"x", "y", "z", "time"});
@@ -125,7 +128,7 @@ void DTW(){
 	auto lf_True = calc_lifetime(df_true);
 	auto lf_Acc = calc_lifetime(df_acc);
 	
-	//ture
+	//true
 	std::unique_ptr<TCanvas> canv(new TCanvas("canv", "canv", 1920, 1080));
 	TH1F *histTrue = new TH1F("lifetime_true","lifetime_true",150,-10,10);
 	
