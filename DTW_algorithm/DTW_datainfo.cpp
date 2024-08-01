@@ -51,14 +51,45 @@ void DTW_datainfo(){
 	//	Info about data
 	//========================
 	
+	// Ratio of Acc/All
+	std::cout << "isAcc/All before filters" << std::endl;
 	std::cout << "Acc: " << (*(df.Filter("isAcc").Take<int>("eventNumber"))).size() << std::endl;
 	std::cout << "All: " << (*(df.Take<int>("eventNumber"))).size() << std::endl;
 	
-	// Ratio of Acc/All
 	std::cout << 100.0*(*(df.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df.Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << std::endl;
 	
-	// Ratio of Acc/All with only accidental pairings of 511
-	std::cout << 100.0*(*(df.Filter("isAcc && (numberOfHits == 2) && (containsPrompt)").Take<int>("eventNumber"))).size() / (*(df.Take<int>("eventNumber"))).size() << std::endl;
+	
+	// Ratio of Acc/All first cut
+	auto df_f1 = df.Filter("(numberOfHits == 3) && (containsPrompt)");
+	
+	std::cout << "isAcc/All first cut" << std::endl;
+	std::cout << "Acc: " << (*(df_f1.Filter("isAcc").Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << "All: " << (*(df_f1.Take<int>("eventNumber"))).size() << std::endl;
+	
+	std::cout << 100.0*(*(df_f1.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df_f1.Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << std::endl;
+	
+	
+	// Ratio of Acc/All second cut
+	auto df_f2 = df.Filter("(numberOfHits == 3) && (isPickOff) && (containsPrompt)");
+	
+	std::cout << "isAcc/All Dsecond cut" << std::endl;
+	std::cout << "Acc: " << (*(df_f2.Filter("isAcc").Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << "All: " << (*(df_f2.Take<int>("eventNumber"))).size() << std::endl;
+	
+	std::cout << 100.0*(*(df_f2.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df_f2.Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << std::endl;
+	
+	// Ratio of Acc/All after all filters
+	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
+	
+	std::cout << "isAcc/All after all filters" << std::endl;
+	std::cout << "Acc: " << (*(df_fltr.Filter("isAcc").Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << "All: " << (*(df_fltr.Take<int>("eventNumber"))).size() << std::endl;
+	
+	std::cout << 100.0*(*(df_fltr.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df_fltr.Take<int>("eventNumber"))).size() << std::endl;
+	std::cout << std::endl;
 	
 	//Random coincidences (type 1)
 	for (int i = 2; i < 6; i++){
@@ -71,6 +102,22 @@ void DTW_datainfo(){
 	double runtime = 0.00005 * window_count;	//[s]
 	std::cout << "Registered source activity: "	<< 1022681.0/runtime << " Bq" << std::endl;
 	
+	
+	//========================
+	//	Test for p-ps
+	//========================
+	
+	std::cout << "\n Test p-ps" << std::endl;
+	std::cout << "Flagi:	2 hits, !containsPrompt, !isScattered, !isOPs" << "\nDTW: " << std::endl;
+	
+	auto df_pps = df.Filter("(numberOfHits == 2) && (!isScattered) && (!containsPrompt) && (!isOPs)");
+	DTW_type1(df_pps, 2);
+	std::cout << "isAcc: " << (*(df_pps.Filter("isAcc").Take<int>("eventNumber"))).size() << std::endl;
+	
+	std::cout << "\n Po fladze !isPickOff" << std::endl;
+	std::cout << "All: " << (*(df_pps.Filter("(!isPickOff)").Take<int>("eventNumber"))).size() << std::endl;
+	//DTW_type1(df_pps.Filter("!isPickOff"), 2);
+	std::cout << "isAcc: " << (*(df_pps.Filter("(!isPickOff) && (isAcc)").Take<int>("eventNumber"))).size() << std::endl;
 	
 	//========================
 	//	Histograms
