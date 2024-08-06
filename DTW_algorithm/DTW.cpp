@@ -65,14 +65,14 @@ float get_origin_z(const vector<float>& x, const vector<float>& y, const  vector
 }
 
 
-void DTW(){
+void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	gROOT->Reset();
 	
 	//open and read file with flatTree paths
-	ifstream inFile("flatTrees.txt");
+	ifstream inFile(fileNameWithPaths.c_str());
 	
 	if(!inFile.is_open() ){
-		cerr << "Error opening the file! Are you sure file 'flatTrees.txt' exists?" << endl;
+		cerr << "Error opening the file! Are you sure file "<< fileNameWithPaths << " exists?" << endl;
 	}	
 	
 	std::string filePath;
@@ -157,8 +157,18 @@ void DTW(){
 	delete gROOT->FindObject("lifetime_acc");
 }
 
-int main()
+int main(int argc, const char* argv[])
 {
-  DTW();
+  /// We treat the first argument as the file with path to root files
+  /// if not given the default file is used
+  std::vector<std::string> args;
+  for (int i=1; i <argc; i++) {
+    args.push_back(std::string(argv[i]));
+  }
+  if (argc > 1) {
+    DTW(args[0]);
+  } else {
+    DTW();
+  }
   return 0;  
 }
