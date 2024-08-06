@@ -1,11 +1,4 @@
-#include <TVector3.h>
-
-#include <TROOT.h>
-#ifdef R__HAS_VDT
-#undef R__HAS_VDT
-#endif
-#include "ROOT/RDataFrame.hxx"
-#include "ROOT/RDF/RInterface.hxx" /// for RNode
+#include "helper_tools.h"
 
 const double kLightVelocity_cm_ps = 0.0299792458;
 
