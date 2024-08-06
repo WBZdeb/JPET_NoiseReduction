@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "calc_lifetime.h"
+#include "helper_tools.h"
 using namespace std;
 
 float get_origin_x(const vector<float>& x, const vector<float>& y, const  vector<float>& z, const vector<float>& time)
@@ -65,6 +66,7 @@ float get_origin_z(const vector<float>& x, const vector<float>& y, const  vector
 }
 
 
+
 void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	gROOT->Reset();
 	
@@ -95,11 +97,16 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//========================
 	
 	//3-hit Pickoff events, no scatters, has prompt
-	auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
+        std::vector<std::string> cuts = {"numberOfHits == 3", "isPickOff","!isScattered","!isSecondary","containsPrompt"};
+        auto df_node = (RNode) df;
+        auto df_fltr = applyCuts(cuts, df_node);
+        auto df_true = applyCuts({"!isAcc"}, df_fltr);
+        auto df_acc = applyCuts({"isAcc"}, df_fltr);
+	//auto df_fltr = df.Filter("(numberOfHits == 3) && (isPickOff) && (!isScattered) && (!isSecondary) && (containsPrompt)");
 	
 	//Split between true events and randoms
-	auto df_true = df_fltr.Filter("!isAcc");
-	auto df_acc = df_fltr.Filter("isAcc");
+	//auto df_true = df_fltr.Filter("!isAcc");
+	//auto df_acc = df_fltr.Filter("isAcc");
 	
 	//Random coincidences (type 1)
 	for (int i = 3; i < 6; i++){
@@ -108,6 +115,9 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	
 	df_true.Snapshot(treeName.c_str(), "out.root");
 	//auto report = df_true.Report();
+
+        auto cutsReport = df_true.Report();
+        saveReportToFile("cut_report.txt", *cutsReport);
 	
 	
 	//========================

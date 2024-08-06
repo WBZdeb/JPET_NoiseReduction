@@ -25,3 +25,13 @@ void saveReportToFile(const std::string& outFileName, ROOT::RDF::RCutFlowReport&
          << cutInfo.GetEff() << " %" << std::endl;
   }
 }
+
+RNode applyCuts(const std::vector<std::string>& cuts, RNode& df)
+{
+  auto current = df;
+  for (const auto& cut : cuts) {
+    current = current.Filter(cut, cut);
+  }
+  return current;
+}
+
