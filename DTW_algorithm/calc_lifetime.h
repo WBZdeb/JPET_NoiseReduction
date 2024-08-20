@@ -135,16 +135,16 @@ void DTW_type1(RNode rnode, int skips){
 				
 			//look for match
 			for(int k = (i+1); k < time_Vec.size(); k++){
-				if(paired[i][j] == 1) break;
+				//if(paired[i][j] == 1) break;
 				if(window_num[k] > (cw+skips)) break;
 				if(window_num[k] < (cw+skips)) continue;
 				
 				for(int l = 0; l < time_Vec[k].size(); l++){
-					if(paired[i][j] == 1) break;
+					//if(paired[i][j] == 1) break;
 					if(paired[k][l] == 1) continue;
 					if(energy[k][l] > energyTH) continue;
 					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						coinc_num+=2;
+						coinc_num+=1;
 						paired[i][j] = 1;
 						paired[k][l] = 1;
 						
