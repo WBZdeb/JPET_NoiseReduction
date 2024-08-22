@@ -91,10 +91,16 @@ void DTW_datainfo(){
 	std::cout << 100.0*(*(df_fltr.Filter("isAcc").Take<int>("eventNumber"))).size() / (*(df_fltr.Take<int>("eventNumber"))).size() << std::endl;
 	std::cout << std::endl;
 	
-	//Random coincidences (type 1)
-	for (int i = 2; i < 6; i++){
-		DTW_type1(df, i);
-	}
+	//Random coincidences
+	std::cout << "\n Type 1 DTW:" << std::endl;
+	DTW_type1(df, 2);
+	std::cout << "\n Type 2 DTW:" << std::endl;
+	DTW_type2(df, 2);
+	std::cout << "\n Type 3 DTW:" << std::endl;
+	DTW_type3(df, 2);
+	std::cout << "\n Type 4 DTW:" << std::endl;
+	DTW_type4(df, 2);
+
 	
 	//Registered source activity
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
