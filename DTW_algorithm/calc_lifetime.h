@@ -97,7 +97,7 @@ void DTW_type1(RNode rnode, int skips){
 	
 	int event_num = 0, coinc_num = 0, lw;
 	int cw, wPrev = window_num[0], wNum = 1;
-	ofstream stats;
+        std::ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
