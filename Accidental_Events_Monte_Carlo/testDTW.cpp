@@ -63,16 +63,13 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 	
 	TRandom gRand;
 	
-	//Create empty dataframe
-	ROOT::RDataFrame empty_df(0);
-	
 	//Populate vector
 	for(int window = 0; window < window_count; window++){
 		//generate hits for a given window
 		for(int iter = 0; iter < itPerWindow; iter++){
 			//generate prompt
 			double time = gRand.Uniform(WIN_LEN, 0.0);
-			windowVec.push_back( *(new gammaP(time, window, eventNum, true)) );
+			windowVec.push_back( gammaP(time, window, eventNum, true) );
 			
 			//generate decay time (in ps)
 			double decayTime = gRand.Exp(125.0);
@@ -80,20 +77,23 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 			//Apply gauss twice to generate two 511-gammas
 			double time_511 = gRand.Gaus(time+decayTime, 250);
 			if(time_511 < 0){
-				windowVec.push_back( *(new gammaP(time_511, window, eventNum, true)) );
+				windowVec.push_back( gammaP(time_511, window, eventNum, false) );
 			}
 			
 			time_511 = gRand.Gaus(time+decayTime, 250);
 			if(time_511 < 0){
-				windowVec.push_back( *(new gammaP(time_511, window, eventNum++, true)) );
+				windowVec.push_back( gammaP(time_511, window, eventNum++, false) );
 			}
 		}
 		//sort vector before appending
 		std::sort(windowVec.begin(), windowVec.end(), compareGammaP);
 		
 		//append window vector to vector of all hits
-		hitsVec.insert(windowVec.end(), windowVec.begin(), windowVec.end());
+		hitsVec.insert(hitsVec.end(), windowVec.begin(), windowVec.end());
 	}
+	
+	//Create empty dataframe
+	ROOT::RDataFrame empty_df(hitsVec.size());
 	
 	//Fill dataframe based on generated hits
 	auto df = empty_df.Define("time",[&hitsVec]() {
