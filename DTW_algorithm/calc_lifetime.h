@@ -99,18 +99,12 @@ void DTW_type1(RNode rnode, int skips){
 	int event_num = 0, coinc_num = 0, lw;
 	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
 	int save_pos[] = {-1, -1};
-	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
 	for(int ind = 0; ind < time_Vec.size(); ind++){
 		std::vector<int> v(time_Vec[ind].size(), 0);
 		paired.push_back(v);
-	}
-	
-	if(skips == 2) {	
-		stats.open("DTW_stats.txt");
-		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
@@ -193,8 +187,6 @@ void DTW_type1(RNode rnode, int skips){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
-	
-	if(skips == 2) stats.close();
 }
 
 //Both second 511 and prompt are delayed --> gives randoms of types IIb and III
@@ -210,18 +202,12 @@ void DTW_type2(RNode rnode, int skips){
 	int event_num = 0, coinc_num = 0, lw;
 	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
 	int save_pos[] = {-1, -1};
-	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
 	for(int ind = 0; ind < time_Vec.size(); ind++){
 		std::vector<int> v(time_Vec[ind].size(), 0);
 		paired.push_back(v);
-	}
-	
-	if(skips == 2) {	
-		stats.open("DTW_stats.txt");
-		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
@@ -305,8 +291,6 @@ void DTW_type2(RNode rnode, int skips){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
-	
-	if(skips == 2) stats.close();
 }
 
 //Second 511 and prompt are delayed with different shifts --> gives randoms of type III
@@ -323,18 +307,12 @@ void DTW_type3(RNode rnode, int skips){
 	int event_num = 0, coinc_num = 0, lw;
 	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
 	int save_pos[] = {-1, -1};
-	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
 	for(int ind = 0; ind < time_Vec.size(); ind++){
 		std::vector<int> v(time_Vec[ind].size(), 0);
 		paired.push_back(v);
-	}
-	
-	if(skips == 2) {	
-		stats.open("DTW_stats.txt");
-		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
@@ -418,8 +396,6 @@ void DTW_type3(RNode rnode, int skips){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
-	
-	if(skips == 2) stats.close();
 }
 
 
@@ -436,18 +412,12 @@ void DTW_type4(RNode rnode, int skips){
 	int event_num = 0, coinc_num = 0, lw;
 	int cw, wPrev = window_num[0], wNum = 1;
 	int save_pos[] = {-1, -1};
-	ofstream stats;
 	
 	//vector of vectors for tagging paired hits
 	std::vector<std::vector<int>> paired = {};
 	for(int ind = 0; ind < time_Vec.size(); ind++){
 		std::vector<int> v(time_Vec[ind].size(), 0);
 		paired.push_back(v);
-	}
-	
-	if(skips == 2) {	
-		stats.open("DTW_stats.txt");
-		stats << "Pair   |   TWindow   |   HitTime   |   Energy\n";
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
@@ -525,8 +495,6 @@ void DTW_type4(RNode rnode, int skips){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
-	
-	if(skips == 2) stats.close();
 }
 
 #endif
