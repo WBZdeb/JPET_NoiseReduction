@@ -252,7 +252,6 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		canvas.SaveAs(filePath.c_str());
 	}
 	
-	return 0;
 }
 
 
