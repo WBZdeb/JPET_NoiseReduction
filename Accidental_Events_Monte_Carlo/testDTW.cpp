@@ -147,6 +147,12 @@ std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window
 }
 
 // [activity] = Bq
+// A = 700000.0 Bq = 0.7 MBq
+// T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
+// 10 ^{-12} = ps
+// <N> = 5*10^-6 * 0.7*10^6 = 3.5
+// T_anih = 3 lub 4 ns
+// T_prompt_anihi = 10 ns
 void testDTW(int window_count = 20, double activity = 700000.0){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
@@ -154,16 +160,20 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		exit(1);
 	}
 	
-	double itPerWindow = activity * (-WIN_LEN) * TMath::Power(10.0, -12.0); //Number of events per window
+	double meanItPerWindow = activity * (-WIN_LEN) * TMath::Power(10.0, -12.0); //Number of events per window
 	std::vector<gammaP> hitsVec;	//Vector storing all generated hits of gamma particles (both 511 and prompt)
 	std::vector<gammaP> windowVec;	//Vector storing particles generated for specific window
 	int eventNum = 0;
 	
 	TRandom gRand;
+        const double kParaDecayTime = 125;
+        const double kTimeResolution = 250;
 	
 	//Populate vector
 	for(int window = 0; window < window_count; window++){
-	
+                //itPerWindow -> to jest lambda = <N> w oknie         	
+                //e{-n*lambda} * lambda^n/n!
+                auto itPerWindow = gRand.Poisson(meanItPerWindow);
 		//generate hits for a given window
 		for(int iter = 0; iter < itPerWindow; iter++){
 		
@@ -173,15 +183,15 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 			windowVec.push_back( gammaP(time, window, eventNum, true) );
 			
 			//generate decay time (in ps)
-			double decayTime = gRand.Exp(125.0);
+			double decayTime = gRand.Exp(kParaDecayTime);
 			
 			//Apply gauss twice to generate two 511-gammas
-			double time_511 = gRand.Gaus(time+decayTime, 250);
+			double time_511 = gRand.Gaus(time+decayTime, kTimeResolution);
 			if(time_511 < 0){
 				windowVec.push_back( gammaP(time_511, window, eventNum, false) );
 			}
 			
-			time_511 = gRand.Gaus(time+decayTime, 250);
+			time_511 = gRand.Gaus(time+decayTime, kTimeResolution);
 			if(time_511 < 0){
 				windowVec.push_back( gammaP(time_511, window, eventNum++, false) );
 			}
@@ -252,7 +262,6 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		canvas.SaveAs(filePath.c_str());
 	}
 	
-	return 0;
 }
 
 
