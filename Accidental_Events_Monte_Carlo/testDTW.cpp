@@ -81,13 +81,13 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
                 if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
                     hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + 5000 ) {
+                    hitsVec[j].getTime() <= hitsVec[i].getTime() + 3000000 ) {
                     
                     //Find a not-paired prompt gamma within 23000 ns around reference 511
                     for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
                         if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - 18000 &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + 5000 ) {
+                            hitsVec[k].getTime() >= hitsVec[i].getTime() - 9000000 &&
+                            hitsVec[k].getTime() <= hitsVec[i].getTime() + 3000000 ) {
                             
                             //Compare eventNum
                             if( hitsVec[i].getEventNum() != hitsVec[j].getEventNum() ||
@@ -166,14 +166,14 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 	int eventNum = 0;
 	
 	TRandom gRand;
-        const double kParaDecayTime = 125;
-        const double kTimeResolution = 250;
+    const double kParaDecayTime = 125;
+    const double kTimeResolution = 250;
 	
 	//Populate vector
 	for(int window = 0; window < window_count; window++){
-                //itPerWindow -> to jest lambda = <N> w oknie         	
-                //e{-n*lambda} * lambda^n/n!
-                auto itPerWindow = gRand.Poisson(meanItPerWindow);
+        //itPerWindow -> to jest lambda = <N> w oknie         	
+        //e{-n*lambda} * lambda^n/n!
+        auto itPerWindow = gRand.Poisson(meanItPerWindow);
 		//generate hits for a given window
 		for(int iter = 0; iter < itPerWindow; iter++){
 		
@@ -242,7 +242,7 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 	std::cout << "Random count for:		window_count = " << window_count << "	activity = " << activity << std::endl;
 	std::cout << "All randoms: " << findRandoms(hitsVec) << std::endl;	
 	
-	
+
 	//Draw prompt interval histograms
 	std::vector<const char*> hNames = {"Window1", "Window2", "Window3", "Window4"};
 	
@@ -261,7 +261,7 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		std::string filePath = "promptIntervals/window" + std::to_string(win) + ".jpg";
 		canvas.SaveAs(filePath.c_str());
 	}
-	
+
 }
 
 
