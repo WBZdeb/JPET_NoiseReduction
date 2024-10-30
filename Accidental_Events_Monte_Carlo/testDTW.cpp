@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <vector>
 #include <string>
@@ -77,17 +78,17 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
         //Start by finding not yet paired 511 gamma
         if( hitsVec[i].isPrompt() == false && !hitsVec[i].isPaired() ) {
         
-            //Find another 511 gamma withing same time window, up to 5000 ns away
+            //Find another 511 gamma withing same time window, up to 0.5 ns away
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
                 if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
                     hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + 3000000 ) {
+                    hitsVec[j].getTime() <= hitsVec[i].getTime() + 500 ) {
                     
-                    //Find a not-paired prompt gamma within 23000 ns around reference 511
+                    //Find a not-paired prompt gamma within 1.8 ns around reference 511
                     for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
                         if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - 9000000 &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + 3000000 ) {
+                            hitsVec[k].getTime() >= hitsVec[i].getTime() - 1300 &&
+                            hitsVec[k].getTime() <= hitsVec[i].getTime() + 500 ) {
                             
                             //Compare eventNum
                             if( hitsVec[i].getEventNum() != hitsVec[j].getEventNum() ||
@@ -118,7 +119,7 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
     return randomsCount;
 }
 
-
+// Calculate intervals between two 511
 std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window) {
 	double prevTime = 0.0;
 	std::vector<double> intervals;
@@ -146,6 +147,40 @@ std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window
 	return intervals;
 }
 
+
+std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window) {
+	int lastPair = -1;
+	std::vector<double> intervals;
+	
+	//Iterate through each gammaP in hitsVec
+    for(int i = 0; i < hitsVec.size(); ++i) {
+    	
+    	//Consider only gammaP within given window
+    	if( hitsVec[i].getTimeWindowNum() != window ){
+    		continue;
+    	}
+    	
+    	//Check if 511
+    	if( !hitsVec[i].isPrompt() && hitsVec[i].getEventNum() != lastPair ){
+    		//look for 511 with identical eventNum
+    		for(int j = i+1; j < hitsVec.size(); ++j) {
+    		
+    			if( hitsVec[i].getEventNum() == hitsVec[j].getEventNum() ){
+    			
+    				if( !hitsVec[j].isPrompt() ){
+    					intervals.push_back( hitsVec[j].getTime() - hitsVec[i].getTime() );
+    					lastPair = hitsVec[i].getEventNum();
+    				}
+    			} else {
+    				break;
+    			}
+    		}
+    	}
+    }
+	
+	return intervals;
+}
+
 // [activity] = Bq
 // A = 700000.0 Bq = 0.7 MBq
 // T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
@@ -153,7 +188,7 @@ std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window
 // <N> = 5*10^-6 * 0.7*10^6 = 3.5
 // T_anih = 3 lub 4 ns
 // T_prompt_anihi = 10 ns
-void testDTW(int window_count = 20, double activity = 700000.0){
+void testDTW(int window_count = 10, double activity = 700000.0){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
 		std::cout << "Command line arguments should be greater than zero" << std::endl;
@@ -202,7 +237,7 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		//append window vector to vector of all hits
 		hitsVec.insert(hitsVec.end(), windowVec.begin(), windowVec.end());
 	}
-	
+/*	
 	//Create empty dataframe
 	ROOT::RDataFrame empty_df(hitsVec.size());
 	
@@ -237,12 +272,42 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 	auto file = TFile::Open("testData.root", "RECREATE");
 	df.Snapshot("testTree", "testData.root");
 	file->Close();
-	
+*/	
 	//Test random count
-	std::cout << "Random count for:		window_count = " << window_count << "	activity = " << activity << std::endl;
-	std::cout << "All randoms: " << findRandoms(hitsVec) << std::endl;	
+	std::vector<std::vector<gammaP>> pairs;
 	
-
+	std::cout << "Random count for:		window_count = " << window_count << "	activity = " << activity << std::endl;
+	std::cout << "All randoms: " << findRandoms(hitsVec, &pairs)/ (double)window_count << std::endl;
+	
+	//Calc different types of randoms
+	int rTypes[4] = {0, 0, 0, 0};
+	
+	for(int pair = 0; pair < pairs.size(); pair++){
+		//Type I
+		if( pairs[pair][0].getEventNum() == pairs[pair][1].getEventNum() &&
+			pairs[pair][0].getEventNum() != pairs[pair][2].getEventNum() &&
+			pairs[pair][1].getEventNum() != pairs[pair][2].getEventNum() ) rTypes[0]++;
+			
+		//Type IIa
+		if( pairs[pair][0].getEventNum() != pairs[pair][1].getEventNum() &&
+			pairs[pair][0].getEventNum() == pairs[pair][2].getEventNum() &&
+			pairs[pair][1].getEventNum() != pairs[pair][2].getEventNum() ) rTypes[1]++;
+					
+		//Type IIb
+		if( pairs[pair][0].getEventNum() != pairs[pair][1].getEventNum() &&
+			pairs[pair][0].getEventNum() != pairs[pair][2].getEventNum() &&
+			pairs[pair][1].getEventNum() == pairs[pair][2].getEventNum() ) rTypes[2]++;
+					
+		//Type III
+		if( pairs[pair][0].getEventNum() != pairs[pair][1].getEventNum() &&
+			pairs[pair][0].getEventNum() != pairs[pair][2].getEventNum() &&
+			pairs[pair][1].getEventNum() != pairs[pair][2].getEventNum() ) rTypes[3]++;
+					
+	}
+	
+	std::cout << "Type I: " << rTypes[0]/ (double)window_count << ",  Type IIa: " << rTypes[1]/ (double)window_count; 
+	std::cout << ",  Type IIb: " << rTypes[2]/ (double)window_count << ",  Type III: " << rTypes[3]/ (double)window_count << std::endl;
+/*
 	//Draw prompt interval histograms
 	std::vector<const char*> hNames = {"Window1", "Window2", "Window3", "Window4"};
 	
@@ -262,6 +327,37 @@ void testDTW(int window_count = 20, double activity = 700000.0){
 		canvas.SaveAs(filePath.c_str());
 	}
 
+	//Draw 511 interval histograms
+	std::vector<double> allIntervals;
+	
+	for(int win = 0; win < window_count; win++){
+		std::vector<double> intervals = calcGammaIntervals(hitsVec, win);
+		
+		allIntervals.insert(allIntervals.end(), intervals.begin(), intervals.end());
+	}
+	
+	//Save vector to txt file for reading in ROOT
+	std::ofstream outFile("promptIntervals/Intervals_511.txt");
+	for(double interval :  allIntervals){
+		outFile << interval << std::endl;
+	}
+	outFile.close();
+	
+	
+	TH1D hist("Intervals_511", "Intervals_511", 30, 0.0, 2000.0);
+		
+	for(double val : allIntervals){
+		hist.Fill(val);
+	}
+		
+	TCanvas canvas;
+	hist.Draw();
+		
+	std::string filePath = "promptIntervals/Intervals_511.jpg";
+	canvas.SaveAs(filePath.c_str());
+*/
 }
+
+
 
 

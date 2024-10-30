@@ -1,0 +1,4 @@
+Random count for:		window_count = 10	activity = 6e+07
+All randoms: 4846
+Type I: 1486,  Type IIa: 2096,  Type IIb: 225,  Type III: 1038
+
