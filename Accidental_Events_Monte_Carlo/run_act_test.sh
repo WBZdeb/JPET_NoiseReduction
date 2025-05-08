@@ -11,11 +11,13 @@ for i in "${!B_values[@]}"; do
 	B="${B_values[i]}"
 	W="${W_values[i]}"
 
+	echo "Iteration $((i + 1)): Running with B = $B and W = $W"
+
 	echo -n "$B " >> "$output_file"
 	
 	root -l -q "testDTW.cpp($W, $B)" 2>&1 | grep "$pattern" | awk '{print $3}' >> "$output_file"
 	
-	echo -e "\n" >> "$output_file"
+	#echo -e "\n" >> "$output_file"
 done
 
 echo "All done."

@@ -1,9 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include <cstdlib>
 #include <vector>
 #include <string>
-#include <TRandom.h>
 #include <ROOT/RDataFrame.hxx>
 #include <TTree.h>
 #include <TFile.h>
@@ -23,13 +21,8 @@ private:
 	bool bIsPrompt;
 	bool paired;
 public:
-	gammaP(double time, int timeWindowNum, int eventNum, bool isPrompt = false){
-		this->time = time;
-		this->timeWindowNum = timeWindowNum;
-		this->eventNum = eventNum;
-		this->bIsPrompt = isPrompt;
-		paired = false;
-	}
+	gammaP(double time, int timeWindowNum, int eventNum, bool isPrompt = false)
+    	: time(time), timeWindowNum(timeWindowNum), eventNum(eventNum), bIsPrompt(isPrompt), paired(false) {}
 	
 	double getTime() const{
 		return this->time;
@@ -57,7 +50,7 @@ public:
 };
 
 //Function for gammaP sorting
-bool compareGammaP(gammaP& a, gammaP& b){
+bool compareGammaP(const gammaP& a, const gammaP& b){
 	return a.getTime() < b.getTime();
 }
 
@@ -66,6 +59,8 @@ bool compareGammaP(gammaP& a, gammaP& b){
 int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int randomsCount = 0;
     int windowStartIndex = 0;
+    double gammaCoincWindowLen = 500.0;
+    double promptCoincWindowLen = 1300.0;	
 
     //Iterate through each gammaP in hitsVec
     for( int i = 0; i < hitsVec.size(); ++i ) {
@@ -82,13 +77,13 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
                 if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
                     hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + 500 ) {
+                    hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
                     
                     //Find a not-paired prompt gamma within 1.8 ns around reference 511
                     for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
                         if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - 1300 &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + 500 ) {
+                            hitsVec[k].getTime() >= hitsVec[i].getTime() - promptCoincWindowLen &&
+                            hitsVec[k].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
                             
                             //Compare eventNum
                             if( hitsVec[i].getEventNum() != hitsVec[j].getEventNum() ||
@@ -125,17 +120,14 @@ std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window
 	std::vector<double> intervals;
 	
 	//Iterate through each gammaP in hitsVec
-    for(int i = 0; i < hitsVec.size(); ++i) {
-    	
+    for(const auto& hit : hitsVec) {	
     	//Consider only gammaP within given window
-    	if( hitsVec[i].getTimeWindowNum() != window ){
-    		continue;
-    	}
+    	if( hit.getTimeWindowNum() != window ) continue;
     	
     	//Check if prompt
-    	if( hitsVec[i].isPrompt() ){
-    		intervals.push_back( hitsVec[i].getTime() - prevTime );
-    		prevTime = hitsVec[i].getTime();
+    	if( hit.isPrompt() ){
+    		intervals.push_back(hit.getTime() - prevTime);
+        	prevTime = hit.getTime();
     	}
     }
 	
@@ -181,31 +173,17 @@ std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window)
 	return intervals;
 }
 
-// [activity] = Bq
-// A = 700000.0 Bq = 0.7 MBq
-// T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
-// 10 ^{-12} = ps
-// <N> = 5*10^-6 * 0.7*10^6 = 3.5
-// T_anih = 3 lub 4 ns
-// T_prompt_anihi = 10 ns
-void testDTW(int window_count = 10, double activity = 700000.0){
-	//If window_count or activity is too small, terminate macro
-	if(window_count <= 0 || activity <= 0){
-		std::cout << "Command line arguments should be greater than zero" << std::endl;
-		exit(1);
-	}
-	
-	double meanItPerWindow = activity * (-WIN_LEN) * TMath::Power(10.0, -12.0); //Number of events per window
-	std::vector<gammaP> hitsVec;	//Vector storing all generated hits of gamma particles (both 511 and prompt)
-	std::vector<gammaP> windowVec;	//Vector storing particles generated for specific window
+
+std::vector<gammaP> generateEvents(int windowCount, double activity) {
+	const double kParaDecayTime = 125.0;
+	const double kTimeResolution = 250.0;
+
+	double meanItPerWindow = activity * (-WIN_LEN) * 1e-12; //Number of events per window
+	std::vector<gammaP> hitsVec, windowVec;
 	int eventNum = 0;
-	
 	TRandom gRand;
-    const double kParaDecayTime = 125;
-    const double kTimeResolution = 250;
-	
-	//Populate vector
-	for(int window = 0; window < window_count; window++){
+
+	for(int window = 0; window < windowCount; window++){
         //itPerWindow -> to jest lambda = <N> w oknie         	
         //e{-n*lambda} * lambda^n/n!
         auto itPerWindow = gRand.Poisson(meanItPerWindow);
@@ -221,22 +199,40 @@ void testDTW(int window_count = 10, double activity = 700000.0){
 			double decayTime = gRand.Exp(kParaDecayTime);
 			
 			//Apply gauss twice to generate two 511-gammas
-			double time_511 = gRand.Gaus(time+decayTime, kTimeResolution);
-			if(time_511 < 0){
-				windowVec.push_back( gammaP(time_511, window, eventNum, false) );
+			for (int i = 0; i < 2; i++) {
+				double t_511 = gRand.Gaus(time + decayTime, kTimeResolution);
+				if (t_511 < 0) windowVec.push_back(gammaP(t_511, window, eventNum, false));
 			}
-			
-			time_511 = gRand.Gaus(time+decayTime, kTimeResolution);
-			if(time_511 < 0){
-				windowVec.push_back( gammaP(time_511, window, eventNum++, false) );
-			}
+			eventNum++;
 		}
 		//sort vector before appending
 		std::sort(windowVec.begin(), windowVec.end(), compareGammaP);
 		
-		//append window vector to vector of all hits
+		//append window vector to vector of all hits; clear after appending
 		hitsVec.insert(hitsVec.end(), windowVec.begin(), windowVec.end());
+		windowVec.clear();
 	}
+	return hitsVec;
+}
+
+
+// [activity] = Bq
+// A = 700000.0 Bq = 0.7 MBq
+// T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
+// 10 ^{-12} = ps
+// <N> = 5*10^-6 * 0.7*10^6 = 3.5
+// T_anih = 3 lub 4 ns
+// T_prompt_anihi = 10 ns
+void testDTW(int window_count = 10, double activity = 700000.0){
+	//If window_count or activity is too small, terminate macro
+	if(window_count <= 0 || activity <= 0){
+		std::cout << "Command line arguments should be greater than zero" << std::endl;
+		exit(1);
+	}
+	
+	//Populate vector
+	auto hitsVec = generateEvents(window_count, activity);
+	
 /*	
 	//Create empty dataframe
 	ROOT::RDataFrame empty_df(hitsVec.size());

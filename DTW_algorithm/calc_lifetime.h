@@ -97,7 +97,7 @@ void DTW_type1(RNode rnode, int skips){
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
 	
 	int event_num = 0, coinc_num = 0, lw;
-	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
+	int cw, wStartInd = 0;
 	int save_pos[] = {-1, -1};
 	
 	//vector of vectors for tagging paired hits
@@ -108,15 +108,7 @@ void DTW_type1(RNode rnode, int skips){
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
-	for(int wInd = 0; wInd < window_num.size(); wInd++){
-		if(window_num[wInd] == wPrev) {
-			window_num[wInd] = wNum;
-		} else {
-			wPrev = window_num[wInd];
-			wNum++;
-			window_num[wInd] = wNum;
-		}
-	}
+	remap_window_numbers(window_num);
 	lw = window_num.back();
 	
 	for(int i = 0; i < time_Vec.size(); i++){
@@ -132,8 +124,7 @@ void DTW_type1(RNode rnode, int skips){
 		//Exit when at the second-to-last window; skip paired hits or prompts
 			event_num++;
 			if(window_num[i] == (lw-skips+1)) continue;
-			if(paired[i][j] == 1) continue;
-			if(energy[i][j] > energyTH) continue;
+			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
 				
 			cw = window_num[i];
 				
@@ -150,11 +141,6 @@ void DTW_type1(RNode rnode, int skips){
 					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
 						save_pos[0] = k;
 						save_pos[1] = l;
-						
-						if(skips == 2){
-							stats << coinc_num << "   |   " << cw << "   |   " << time_Vec[i][j] << "   |   " << energy[i][j] << "\n";
-							stats << coinc_num << "   |   " << window_num[k] << "   |   " << time_Vec[k][l] << "   |   " << energy[k][l] << "\n";
-						}
 					}
 				}
 			}
@@ -200,7 +186,7 @@ void DTW_type2(RNode rnode, int skips){
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
 	
 	int event_num = 0, coinc_num = 0, lw;
-	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
+	int cw, wStartInd = 0;
 	int save_pos[] = {-1, -1};
 	
 	//vector of vectors for tagging paired hits
@@ -211,15 +197,7 @@ void DTW_type2(RNode rnode, int skips){
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
-	for(int wInd = 0; wInd < window_num.size(); wInd++){
-		if(window_num[wInd] == wPrev) {
-			window_num[wInd] = wNum;
-		} else {
-			wPrev = window_num[wInd];
-			wNum++;
-			window_num[wInd] = wNum;
-		}
-	}
+	remap_window_numbers(window_num);
 	lw = window_num.back();
 	
 	for(int i = 0; i < time_Vec.size(); i++){
@@ -235,8 +213,7 @@ void DTW_type2(RNode rnode, int skips){
 		//Exit when at the second-to-last window; skip paired hits or prompts
 			event_num++;
 			if(window_num[i] == (lw-skips+1)) continue;
-			if(paired[i][j] == 1) continue;
-			if(energy[i][j] > energyTH) continue;
+			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
 				
 			cw = window_num[i];
 				
@@ -253,11 +230,6 @@ void DTW_type2(RNode rnode, int skips){
 					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
 						save_pos[0] = k;
 						save_pos[1] = l;
-						
-						if(skips == 2){
-							stats << coinc_num << "   |   " << cw << "   |   " << time_Vec[i][j] << "   |   " << energy[i][j] << "\n";
-							stats << coinc_num << "   |   " << window_num[k] << "   |   " << time_Vec[k][l] << "   |   " << energy[k][l] << "\n";
-						}
 					}
 				}
 			}
@@ -305,7 +277,7 @@ void DTW_type3(RNode rnode, int skips){
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
 	
 	int event_num = 0, coinc_num = 0, lw;
-	int cw, wPrev = window_num[0], wNum = 1, wStartInd = 0;
+	int cw, wStartInd = 0;
 	int save_pos[] = {-1, -1};
 	
 	//vector of vectors for tagging paired hits
@@ -316,15 +288,7 @@ void DTW_type3(RNode rnode, int skips){
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
-	for(int wInd = 0; wInd < window_num.size(); wInd++){
-		if(window_num[wInd] == wPrev) {
-			window_num[wInd] = wNum;
-		} else {
-			wPrev = window_num[wInd];
-			wNum++;
-			window_num[wInd] = wNum;
-		}
-	}
+	remap_window_numbers(window_num);
 	lw = window_num.back();
 	
 	for(int i = 0; i < time_Vec.size(); i++){
@@ -340,8 +304,7 @@ void DTW_type3(RNode rnode, int skips){
 		//Exit when at the second-to-last window; skip paired hits or prompts
 			event_num++;
 			if(window_num[i] == (lw-p_skips+1)) continue;
-			if(paired[i][j] == 1) continue;
-			if(energy[i][j] > energyTH) continue;
+			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
 				
 			cw = window_num[i];
 				
@@ -358,11 +321,6 @@ void DTW_type3(RNode rnode, int skips){
 					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
 						save_pos[0] = k;
 						save_pos[1] = l;
-						
-						if(skips == 2){
-							stats << coinc_num << "   |   " << cw << "   |   " << time_Vec[i][j] << "   |   " << energy[i][j] << "\n";
-							stats << coinc_num << "   |   " << window_num[k] << "   |   " << time_Vec[k][l] << "   |   " << energy[k][l] << "\n";
-						}
 					}
 				}
 			}
@@ -410,7 +368,7 @@ void DTW_type4(RNode rnode, int skips){
 	auto window_num = *(df.Take<int>("timeWindowNumber"));
 	
 	int event_num = 0, coinc_num = 0, lw;
-	int cw, wPrev = window_num[0], wNum = 1;
+	int cw;
 	int save_pos[] = {-1, -1};
 	
 	//vector of vectors for tagging paired hits
@@ -421,15 +379,7 @@ void DTW_type4(RNode rnode, int skips){
 	}
 	
 	//Re-mapping of window numbers to avoid gaps
-	for(int wInd = 0; wInd < window_num.size(); wInd++){
-		if(window_num[wInd] == wPrev) {
-			window_num[wInd] = wNum;
-		} else {
-			wPrev = window_num[wInd];
-			wNum++;
-			window_num[wInd] = wNum;
-		}
-	}
+	remap_window_numbers(window_num);
 	lw = window_num.back();
 	
 	for(int i = 0; i < time_Vec.size(); i++){
@@ -440,8 +390,7 @@ void DTW_type4(RNode rnode, int skips){
 		//Exit when at the second-to-last window; skip paired hits or prompts
 			event_num++;
 			if(window_num[i] == (lw-skips+1)) continue;
-			if(paired[i][j] == 1) continue;
-			if(energy[i][j] > energyTH) continue;
+			if(!is_valid_hit(i, j, paired, energy, energyTH)) continue;
 				
 			cw = window_num[i];
 				
@@ -457,11 +406,6 @@ void DTW_type4(RNode rnode, int skips){
 					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
 						save_pos[0] = k;
 						save_pos[1] = l;
-						
-						if(skips == 2){
-							stats << coinc_num << "   |   " << cw << "   |   " << time_Vec[i][j] << "   |   " << energy[i][j] << "\n";
-							stats << coinc_num << "   |   " << window_num[k] << "   |   " << time_Vec[k][l] << "   |   " << energy[k][l] << "\n";
-						}
 					}
 				}
 			}
@@ -495,6 +439,24 @@ void DTW_type4(RNode rnode, int skips){
 	std::cout << "All hits: " << event_num << std::endl;
 	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
 	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+}
+
+
+static void remap_window_numbers(std::vector<int>& window_num) {
+    int wPrev = window_num[0], wNum = 1;
+    for (int wInd = 0; wInd < window_num.size(); wInd++) {
+        if (window_num[wInd] == wPrev) {
+            window_num[wInd] = wNum;
+        } else {
+            wPrev = window_num[wInd];
+            wNum++;
+            window_num[wInd] = wNum;
+        }
+    }
+}
+
+bool is_valid_hit(int i, int j, const std::vector<std::vector<int>>& paired, const std::vector<std::vector<float>>& energy, const float energyTH) {
+    return paired[i][j] == 0 && energy[i][j] <= energyTH;
 }
 
 #endif
