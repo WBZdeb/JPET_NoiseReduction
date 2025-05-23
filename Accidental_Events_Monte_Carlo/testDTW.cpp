@@ -223,7 +223,8 @@ std::vector<gammaP> generateEvents(int windowCount, double activity) {
 // <N> = 5*10^-6 * 0.7*10^6 = 3.5
 // T_anih = 3 lub 4 ns
 // T_prompt_anihi = 10 ns
-void testDTW(int window_count = 10, double activity = 700000.0){
+
+ROOT::RDataFrame generate_DataFrame(int window_count = 10, double activity = 700000.0){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
 		std::cout << "Command line arguments should be greater than zero" << std::endl;
@@ -233,7 +234,6 @@ void testDTW(int window_count = 10, double activity = 700000.0){
 	//Populate vector
 	auto hitsVec = generateEvents(window_count, activity);
 	
-/*	
 	//Create empty dataframe
 	ROOT::RDataFrame empty_df(hitsVec.size());
 	
@@ -265,10 +265,24 @@ void testDTW(int window_count = 10, double activity = 700000.0){
 					});
 	
 	//Save the dataframe (will overwrite)
-	auto file = TFile::Open("testData.root", "RECREATE");
-	df.Snapshot("testTree", "testData.root");
-	file->Close();
-*/	
+	//auto file = TFile::Open("testData.root", "RECREATE");
+	//df.Snapshot("testTree", "testData.root");
+	//file->Close();
+	
+	return df;
+}
+
+void testDTW(int window_count = 10, double activity = 700000.0){
+	//If window_count or activity is too small, terminate macro
+	if(window_count <= 0 || activity <= 0){
+		std::cout << "Command line arguments should be greater than zero" << std::endl;
+		exit(1);
+	}
+	
+	//Populate vector
+	auto hitsVec = generateEvents(window_count, activity);
+	
+	
 	//Test random count
 	std::vector<std::vector<gammaP>> pairs;
 	

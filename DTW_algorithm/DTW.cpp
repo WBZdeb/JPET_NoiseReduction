@@ -108,9 +108,12 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//auto df_true = df_fltr.Filter("!isAcc");
 	//auto df_acc = df_fltr.Filter("isAcc");
 	
-	//Random coincidences (type 1)
+	//Random coincidences
 	for (int i = 3; i < 6; i++){
 		DTW_type1(df_true, i);
+		DTW_type2(df_true, i);
+		DTW_type3(df_true, i);
+		DTW_type4(df_true, i);
 	}
 	
 	df_true.Snapshot(treeName.c_str(), "out.root");

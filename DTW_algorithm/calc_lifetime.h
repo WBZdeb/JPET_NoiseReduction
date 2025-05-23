@@ -87,360 +87,116 @@ std::vector<float> calc_lifetime(RNode rnode){
 }
 
 //Only second 511 is delayed --> gives randoms of types IIa and III
-void DTW_type1(RNode rnode, int skips){
-	auto df = rnode;
-	if(skips < 1) skips = 1;
-
-	const float lookahead = 5000, p_lookbehind = -18000, energyTH = 350.0, promptTH = 511;
-	auto time_Vec = *(df.Take<std::vector<float>>("time"));
-	auto energy = *(df.Take<std::vector<float>>("energy"));
-	auto window_num = *(df.Take<int>("timeWindowNumber"));
-	
-	int event_num = 0, coinc_num = 0, lw;
-	int cw, wStartInd = 0;
-	int save_pos[] = {-1, -1};
-	
-	//vector of vectors for tagging paired hits
-	std::vector<std::vector<int>> paired = {};
-	for(int ind = 0; ind < time_Vec.size(); ind++){
-		std::vector<int> v(time_Vec[ind].size(), 0);
-		paired.push_back(v);
-	}
-	
-	//Re-mapping of window numbers to avoid gaps
-	remap_window_numbers(window_num);
-	lw = window_num.back();
-	
-	for(int i = 0; i < time_Vec.size(); i++){
-		save_pos[0] = -1;
-		save_pos[1] = -1;
-		
-		//Tracking first index of current window, so we can check entire window for prompt matching
-		if( window_num[i] > window_num[wStartInd] ){
-			wStartInd = i;
-		}
-		
-		for(int j = 0; j < time_Vec[i].size(); j++){
-		//Exit when at the second-to-last window; skip paired hits or prompts
-			event_num++;
-			if(window_num[i] == (lw-skips+1)) continue;
-			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
-				
-			cw = window_num[i];
-				
-			//look for match
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+skips)) break;
-				if(window_num[k] < (cw+skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] > energyTH) continue;
-					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						save_pos[0] = k;
-						save_pos[1] = l;
-					}
-				}
-			}
-			//if no match - skip to next iteration
-			if( save_pos[0] == -1 ) continue;
-			
-			//look for prompt
-			for(int k = wStartInd; k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > cw) break;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] <= promptTH) continue;
-					
-					//Prompt can be 5 ns after or 18 ns before reference 511
-					if( ((time_Vec[k][l] - time_Vec[i][j]) < lookahead)  &&
-					     	((time_Vec[k][l] - time_Vec[i][j]) > p_lookbehind) ){
-					    
-						coinc_num+=1;
-						paired[i][j] = 1;
-						paired[k][l] = 1;
-						paired[ save_pos[0] ][ save_pos[1] ] = 1;
-					}
-				}
-			}
-		}
-	}
-	std::cout << "All hits: " << event_num << std::endl;
-	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
-	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+void DTW_type1(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k <= cw; },
+        [](int i) { return 0; }
+    );
 }
 
 //Both second 511 and prompt are delayed --> gives randoms of types IIb and III
-void DTW_type2(RNode rnode, int skips){
-	auto df = rnode;
-	if(skips < 1) skips = 1;
-
-	const float lookahead = 5000, p_lookbehind = -18000, energyTH = 350.0, promptTH = 511;
-	auto time_Vec = *(df.Take<std::vector<float>>("time"));
-	auto energy = *(df.Take<std::vector<float>>("energy"));
-	auto window_num = *(df.Take<int>("timeWindowNumber"));
-	
-	int event_num = 0, coinc_num = 0, lw;
-	int cw, wStartInd = 0;
-	int save_pos[] = {-1, -1};
-	
-	//vector of vectors for tagging paired hits
-	std::vector<std::vector<int>> paired = {};
-	for(int ind = 0; ind < time_Vec.size(); ind++){
-		std::vector<int> v(time_Vec[ind].size(), 0);
-		paired.push_back(v);
-	}
-	
-	//Re-mapping of window numbers to avoid gaps
-	remap_window_numbers(window_num);
-	lw = window_num.back();
-	
-	for(int i = 0; i < time_Vec.size(); i++){
-		save_pos[0] = -1;
-		save_pos[1] = -1;
-		
-		//Tracking first index of current window, so we can check entire window for prompt matching
-		if( window_num[i] > window_num[wStartInd] ){
-			wStartInd = i;
-		}
-		
-		for(int j = 0; j < time_Vec[i].size(); j++){
-		//Exit when at the second-to-last window; skip paired hits or prompts
-			event_num++;
-			if(window_num[i] == (lw-skips+1)) continue;
-			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
-				
-			cw = window_num[i];
-				
-			//look for match
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+skips)) break;
-				if(window_num[k] < (cw+skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] > energyTH) continue;
-					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						save_pos[0] = k;
-						save_pos[1] = l;
-					}
-				}
-			}
-			//if no match - skip to next iteration
-			if( save_pos[0] == -1 ) continue;
-			
-			//look for prompt
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+skips)) break;
-				if(window_num[k] < (cw+skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] <= promptTH) continue;
-					
-					//Prompt can be 5 ns after or 18 ns before reference 511
-					if( ((time_Vec[k][l] - time_Vec[i][j]) < lookahead)  &&
-					     	((time_Vec[k][l] - time_Vec[i][j]) > p_lookbehind) ){
-					    
-						coinc_num+=1;
-						paired[i][j] = 1;
-						paired[k][l] = 1;
-						paired[ save_pos[0] ][ save_pos[1] ] = 1;
-					}
-				}
-			}
-		}
-	}
-	std::cout << "All hits: " << event_num << std::endl;
-	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
-	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+void DTW_type2(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int i) { return i + 1; }
+    );
 }
 
-//Second 511 and prompt are delayed with different shifts --> gives randoms of type III
-void DTW_type3(RNode rnode, int skips){
-	auto df = rnode;
-	if(skips < 1) skips = 1;
-	int p_skips = skips+1;
 
-	const float lookahead = 5000, p_lookbehind = -18000, energyTH = 350.0, promptTH = 511;
-	auto time_Vec = *(df.Take<std::vector<float>>("time"));
-	auto energy = *(df.Take<std::vector<float>>("energy"));
-	auto window_num = *(df.Take<int>("timeWindowNumber"));
-	
-	int event_num = 0, coinc_num = 0, lw;
-	int cw, wStartInd = 0;
-	int save_pos[] = {-1, -1};
-	
-	//vector of vectors for tagging paired hits
-	std::vector<std::vector<int>> paired = {};
-	for(int ind = 0; ind < time_Vec.size(); ind++){
-		std::vector<int> v(time_Vec[ind].size(), 0);
-		paired.push_back(v);
-	}
-	
-	//Re-mapping of window numbers to avoid gaps
-	remap_window_numbers(window_num);
-	lw = window_num.back();
-	
-	for(int i = 0; i < time_Vec.size(); i++){
-		save_pos[0] = -1;
-		save_pos[1] = -1;
-		
-		//Tracking first index of current window, so we can check entire window for prompt matching
-		if( window_num[i] > window_num[wStartInd] ){
-			wStartInd = i;
-		}
-		
-		for(int j = 0; j < time_Vec[i].size(); j++){
-		//Exit when at the second-to-last window; skip paired hits or prompts
-			event_num++;
-			if(window_num[i] == (lw-p_skips+1)) continue;
-			if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
-				
-			cw = window_num[i];
-				
-			//look for match
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+skips)) break;
-				if(window_num[k] < (cw+skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] > energyTH) continue;
-					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						save_pos[0] = k;
-						save_pos[1] = l;
-					}
-				}
-			}
-			//if no match - skip to next iteration
-			if( save_pos[0] == -1 ) continue;
-			
-			//look for prompt
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+p_skips)) break;
-				if(window_num[k] < (cw+p_skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] <= promptTH) continue;
-					
-					//Prompt can be 5 ns after or 18 ns before reference 511
-					if( ((time_Vec[k][l] - time_Vec[i][j]) < lookahead)  &&
-					     	((time_Vec[k][l] - time_Vec[i][j]) > p_lookbehind) ){
-					    
-						coinc_num+=1;
-						paired[i][j] = 1;
-						paired[k][l] = 1;
-						paired[ save_pos[0] ][ save_pos[1] ] = 1;
-					}
-				}
-			}
-		}
-	}
-	std::cout << "All hits: " << event_num << std::endl;
-	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
-	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+//Second 511 and prompt are delayed with different shifts --> gives randoms of type III
+void DTW_type3(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips + 1); },
+        [](int i) { return i + 1; }
+    );
 }
 
 
 //Only prompt is delayed --> gives randoms of types I and III
-void DTW_type4(RNode rnode, int skips){
-	auto df = rnode;
-	if(skips < 1) skips = 1;
-
-	const float lookahead = 5000, p_lookbehind = -18000, energyTH = 350.0, promptTH = 511;
-	auto time_Vec = *(df.Take<std::vector<float>>("time"));
-	auto energy = *(df.Take<std::vector<float>>("energy"));
-	auto window_num = *(df.Take<int>("timeWindowNumber"));
-	
-	int event_num = 0, coinc_num = 0, lw;
-	int cw;
-	int save_pos[] = {-1, -1};
-	
-	//vector of vectors for tagging paired hits
-	std::vector<std::vector<int>> paired = {};
-	for(int ind = 0; ind < time_Vec.size(); ind++){
-		std::vector<int> v(time_Vec[ind].size(), 0);
-		paired.push_back(v);
-	}
-	
-	//Re-mapping of window numbers to avoid gaps
-	remap_window_numbers(window_num);
-	lw = window_num.back();
-	
-	for(int i = 0; i < time_Vec.size(); i++){
-		save_pos[0] = -1;
-		save_pos[1] = -1;
-		
-		for(int j = 0; j < time_Vec[i].size(); j++){
-		//Exit when at the second-to-last window; skip paired hits or prompts
-			event_num++;
-			if(window_num[i] == (lw-skips+1)) continue;
-			if(!is_valid_hit(i, j, paired, energy, energyTH)) continue;
-				
-			cw = window_num[i];
-				
-			//look for match
-			for(int k = i; k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > cw) break;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					if( (k == i) && (l == j) ) continue;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] > energyTH) continue;
-					if( TMath::Abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead){
-						save_pos[0] = k;
-						save_pos[1] = l;
-					}
-				}
-			}
-			//if no match - skip to next iteration
-			if( save_pos[0] == -1 ) continue;
-			
-			//look for prompt
-			for(int k = (i+1); k < time_Vec.size(); k++){
-				//if(paired[i][j] == 1) break;
-				if(window_num[k] > (cw+skips)) break;
-				if(window_num[k] < (cw+skips)) continue;
-				
-				for(int l = 0; l < time_Vec[k].size(); l++){
-					//if(paired[i][j] == 1) break;
-					if(paired[k][l] == 1) continue;
-					if(energy[k][l] <= promptTH) continue;
-					
-					//Prompt can be 5 ns after or 18 ns before reference 511
-					if( ((time_Vec[k][l] - time_Vec[i][j]) < lookahead)  &&
-					     	((time_Vec[k][l] - time_Vec[i][j]) > p_lookbehind) ){
-					    
-						coinc_num+=1;
-						paired[i][j] = 1;
-						paired[k][l] = 1;
-						paired[ save_pos[0] ][ save_pos[1] ] = 1;
-					}
-				}
-			}
-		}
-	}
-	std::cout << "All hits: " << event_num << std::endl;
-	std::cout << "Randoms (type 1): " << coinc_num << std::endl;
-	std::cout << "Percentage: " << 100.0*coinc_num/event_num << "%" << std::endl;
+void DTW_type4(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int) { return win_k <= cw; },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int i) { return i + 1; }
+    );
 }
 
+//Helper function for DTW_type#
+static void run_DTW(
+    RNode df,
+    int skips,
+    std::function<bool(int, int, int)> match_window_cond,
+    std::function<bool(int, int, int)> prompt_window_cond,
+    std::function<int(int)> prompt_window_start_index
+) {
+    if (skips < 1) skips = 1;
+
+    const float lookahead = 5000, p_lookbehind = -18000, energyTH = 350.0, promptTH = 511;
+    auto time_Vec = *(df.Take<std::vector<float>>("time"));
+    auto energy = *(df.Take<std::vector<float>>("energy"));
+    auto window_num = *(df.Take<int>("timeWindowNumber"));
+
+    int event_num = 0, coinc_num = 0;
+    int lw, cw;
+    int wStartInd = 0;
+    int save_pos[] = {-1, -1};
+
+    std::vector<std::vector<int>> paired(time_Vec.size());
+    for (size_t i = 0; i < time_Vec.size(); i++)
+        paired[i] = std::vector<int>(time_Vec[i].size(), 0);
+
+    remap_window_numbers(window_num);
+    lw = window_num.back();
+
+    for (size_t i = 0; i < time_Vec.size(); i++) {
+        save_pos[0] = save_pos[1] = -1;
+        if (window_num[i] > window_num[wStartInd]) wStartInd = i;
+
+        for (size_t j = 0; j < time_Vec[i].size(); j++) {
+            event_num++;
+            if (!is_valid_hit(i, j, paired, energy, energyTH)) continue;
+            if (window_num[i] >= lw - skips + 1) continue;
+
+            cw = window_num[i];
+
+            // Match search
+            for (size_t k = i + 1; k < time_Vec.size(); k++) {
+                if (!match_window_cond(window_num[k], cw, skips)) continue;
+                for (size_t l = 0; l < time_Vec[k].size(); l++) {
+                    if (paired[k][l] == 1 || energy[k][l] > energyTH) continue;
+                    if (std::abs(time_Vec[k][l] - time_Vec[i][j]) < lookahead) {
+                        save_pos[0] = k;
+                        save_pos[1] = l;
+                    }
+                }
+            }
+            if (save_pos[0] == -1) continue;
+
+            // Prompt search
+            int start_idx = prompt_window_start_index(i);
+            for (size_t k = start_idx; k < time_Vec.size(); k++) {
+                if (!prompt_window_cond(window_num[k], cw, skips)) continue;
+                for (size_t l = 0; l < time_Vec[k].size(); l++) {
+                    if (paired[k][l] == 1 || energy[k][l] <= promptTH) continue;
+                    float dt = time_Vec[k][l] - time_Vec[i][j];
+                    if (dt < lookahead && dt > p_lookbehind) {
+                        coinc_num++;
+                        paired[i][j] = 1;
+                        paired[k][l] = 1;
+                        paired[save_pos[0]][save_pos[1]] = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    std::cout << "All hits: " << event_num << std::endl;
+    std::cout << "Randoms: " << coinc_num << std::endl;
+    std::cout << "Percentage: " << 100.0 * coinc_num / event_num << "%" << std::endl;
+}
 
 static void remap_window_numbers(std::vector<int>& window_num) {
     int wPrev = window_num[0], wNum = 1;
