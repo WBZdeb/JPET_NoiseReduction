@@ -4,6 +4,7 @@
 
 #include <TVector3.h>
 #include <TROOT.h>
+#include <fstream>
 #ifdef R__HAS_VDT
 #undef R__HAS_VDT
 #endif

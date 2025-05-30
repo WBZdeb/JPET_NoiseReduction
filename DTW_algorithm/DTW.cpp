@@ -21,6 +21,7 @@
 
 #include "calc_lifetime.h"
 #include "helper_tools.h"
+#include "../Accidental_Events_Monte_Carlo/testDTW.h"
 using namespace std;
 
 float get_origin_x(const vector<float>& x, const vector<float>& y, const  vector<float>& z, const vector<float>& time)
@@ -97,6 +98,7 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//========================
 	
 	//3-hit Pickoff events, no scatters, has prompt
+	std::cout << "Preparing dataframes..." << std::endl;
         std::vector<std::string> cuts = {"numberOfHits == 3", "isPickOff","!isScattered","!isSecondary","containsPrompt"};
         auto df_node = (RNode) df;
         auto df_fltr = applyCuts(cuts, df_node);
@@ -108,12 +110,23 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//auto df_true = df_fltr.Filter("!isAcc");
 	//auto df_acc = df_fltr.Filter("isAcc");
 	
-	//Random coincidences
-	for (int i = 3; i < 6; i++){
+	//Random coincidences - test data
+	std::cout << "Performing DTW test on test data..." << std::endl;
+	for (int i = 1; i < 2; i++){
 		DTW_type1(df_true, i);
 		DTW_type2(df_true, i);
 		DTW_type3(df_true, i);
 		DTW_type4(df_true, i);
+	}
+	
+	//Random coincidences - generated data
+	std::cout << "Performing DTW test on generated data..." << std::endl;
+	auto df_gen = generate_DataFrame(3, 70000.0);
+	for (int i = 1; i < 2; i++){
+		DTW_type1(df_gen, i);
+		DTW_type2(df_gen, i);
+		DTW_type3(df_gen, i);
+		DTW_type4(df_gen, i);
 	}
 	
 	df_true.Snapshot(treeName.c_str(), "out.root");
@@ -126,6 +139,7 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//========================
 	//	Plotting results
 	//========================
+	std::cout << "Plotting results..." << std::endl;
 	
 	//Histo of origin points
 	auto df_vertex = df_true.Define("origin_x", get_origin_x, {"x", "y", "z", "time"}).Define("origin_y", get_origin_y, {"x", "y", "z", "time"}).Define(

@@ -86,42 +86,21 @@ std::vector<float> calc_lifetime(RNode rnode){
 	return lifetimes;
 }
 
-//Only second 511 is delayed --> gives randoms of types IIa and III
-void DTW_type1(RNode rnode, int skips) {
-    run_DTW(rnode, skips,
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
-        [](int win_k, int cw, int skips) { return win_k <= cw; },
-        [](int i) { return 0; }
-    );
+static void remap_window_numbers(std::vector<int>& window_num) {
+    int wPrev = window_num[0], wNum = 1;
+    for (int wInd = 0; wInd < window_num.size(); wInd++) {
+        if (window_num[wInd] == wPrev) {
+            window_num[wInd] = wNum;
+        } else {
+            wPrev = window_num[wInd];
+            wNum++;
+            window_num[wInd] = wNum;
+        }
+    }
 }
 
-//Both second 511 and prompt are delayed --> gives randoms of types IIb and III
-void DTW_type2(RNode rnode, int skips) {
-    run_DTW(rnode, skips,
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
-        [](int i) { return i + 1; }
-    );
-}
-
-
-//Second 511 and prompt are delayed with different shifts --> gives randoms of type III
-void DTW_type3(RNode rnode, int skips) {
-    run_DTW(rnode, skips,
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips + 1); },
-        [](int i) { return i + 1; }
-    );
-}
-
-
-//Only prompt is delayed --> gives randoms of types I and III
-void DTW_type4(RNode rnode, int skips) {
-    run_DTW(rnode, skips,
-        [](int win_k, int cw, int) { return win_k <= cw; },
-        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
-        [](int i) { return i + 1; }
-    );
+static bool is_valid_hit(int i, int j, const std::vector<std::vector<int>>& paired, const std::vector<std::vector<float>>& energy, const float energyTH) {
+    return paired[i][j] == 0 && energy[i][j] <= energyTH;
 }
 
 //Helper function for DTW_type#
@@ -198,21 +177,43 @@ static void run_DTW(
     std::cout << "Percentage: " << 100.0 * coinc_num / event_num << "%" << std::endl;
 }
 
-static void remap_window_numbers(std::vector<int>& window_num) {
-    int wPrev = window_num[0], wNum = 1;
-    for (int wInd = 0; wInd < window_num.size(); wInd++) {
-        if (window_num[wInd] == wPrev) {
-            window_num[wInd] = wNum;
-        } else {
-            wPrev = window_num[wInd];
-            wNum++;
-            window_num[wInd] = wNum;
-        }
-    }
+
+//Only second 511 is delayed --> gives randoms of types IIa and III
+void DTW_type1(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k <= cw; },
+        [](int i) { return 0; }
+    );
 }
 
-bool is_valid_hit(int i, int j, const std::vector<std::vector<int>>& paired, const std::vector<std::vector<float>>& energy, const float energyTH) {
-    return paired[i][j] == 0 && energy[i][j] <= energyTH;
+//Both second 511 and prompt are delayed --> gives randoms of types IIb and III
+void DTW_type2(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int i) { return i + 1; }
+    );
+}
+
+
+//Second 511 and prompt are delayed with different shifts --> gives randoms of type III
+void DTW_type3(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips + 1); },
+        [](int i) { return i + 1; }
+    );
+}
+
+
+//Only prompt is delayed --> gives randoms of types I and III
+void DTW_type4(RNode rnode, int skips) {
+    run_DTW(rnode, skips,
+        [](int win_k, int cw, int) { return win_k <= cw; },
+        [](int win_k, int cw, int skips) { return win_k == (cw + skips); },
+        [](int i) { return i + 1; }
+    );
 }
 
 #endif

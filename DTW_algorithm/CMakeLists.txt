@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.1...3.16)
+cmake_minimum_required(VERSION 3.12)
 
 project(DTW LANGUAGES CXX)
 
-add_definitions(-std=c++11 -Wall -Wunused-parameter -Wextra  -g)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -24,15 +25,14 @@ find_package(ROOT REQUIRED COMPONENTS
   ROOTDataFrame
   MultiProc
   ROOTVecOps 
-  )
+)
 
 include_directories(${ROOT_INCLUDE_DIRS})
-add_definitions(${ROOT_DEFINITIONS})
-link_directories(${ROOT_LIBRARY_DIRS})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_library(helper_tools SHARED helper_tools.cpp)
+target_link_libraries(helper_tools PRIVATE ${ROOT_LIBRARIES})
 
-add_library(helper_tools SHARED helper_tools.cpp ${ROOT_LIBRARIES})
-
-add_executable(DTW.exe DTW.cpp)
+add_executable(DTW.exe DTW.cpp ../Accidental_Events_Monte_Carlo/testDTW.cpp)
+target_include_directories(DTW.exe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(DTW.exe PRIVATE helper_tools ${ROOT_LIBRARIES})
+

@@ -15,16 +15,16 @@
 
 class gammaP {
 private:
-	double time;
+	float time;
 	int timeWindowNum;
 	int eventNum;
 	bool bIsPrompt;
 	bool paired;
 public:
-	gammaP(double time, int timeWindowNum, int eventNum, bool isPrompt = false)
+	gammaP(float time, int timeWindowNum, int eventNum, bool isPrompt = false)
     	: time(time), timeWindowNum(timeWindowNum), eventNum(eventNum), bIsPrompt(isPrompt), paired(false) {}
 	
-	double getTime() const{
+	float getTime() const{
 		return this->time;
 	}
 	
@@ -50,17 +50,17 @@ public:
 };
 
 //Function for gammaP sorting
-bool compareGammaP(const gammaP& a, const gammaP& b){
+static bool compareGammaP(const gammaP& a, const gammaP& b){
 	return a.getTime() < b.getTime();
 }
 
 
 //Function for finding randoms; returns number, stores pairs inside passed vector
-int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
+static int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int randomsCount = 0;
     int windowStartIndex = 0;
-    double gammaCoincWindowLen = 500.0;
-    double promptCoincWindowLen = 1300.0;	
+    float gammaCoincWindowLen = 500.0f;
+    float promptCoincWindowLen = 1300.0f;	
 
     //Iterate through each gammaP in hitsVec
     for( int i = 0; i < hitsVec.size(); ++i ) {
@@ -115,9 +115,9 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
 }
 
 // Calculate intervals between two 511
-std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window) {
-	double prevTime = 0.0;
-	std::vector<double> intervals;
+static std::vector<float> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window) {
+	float prevTime = 0.0f;
+	std::vector<float> intervals;
 	
 	//Iterate through each gammaP in hitsVec
     for(const auto& hit : hitsVec) {	
@@ -140,9 +140,9 @@ std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window
 }
 
 
-std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window) {
+static std::vector<float> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window) {
 	int lastPair = -1;
-	std::vector<double> intervals;
+	std::vector<float> intervals;
 	
 	//Iterate through each gammaP in hitsVec
     for(int i = 0; i < hitsVec.size(); ++i) {
@@ -174,7 +174,7 @@ std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window)
 }
 
 
-std::vector<gammaP> generateEvents(int windowCount, double activity) {
+static std::vector<gammaP> generateEvents(int windowCount, double activity) {
 	const double kParaDecayTime = 125.0;
 	const double kTimeResolution = 250.0;
 
@@ -191,16 +191,16 @@ std::vector<gammaP> generateEvents(int windowCount, double activity) {
 		for(int iter = 0; iter < itPerWindow; iter++){
 		
 			//generate prompt
-			double time = gRand.Uniform(WIN_LEN, 0.0);
+			float time = gRand.Uniform(WIN_LEN, 0.0);
 			//std::cout << time << "	" << window << std::endl;
 			windowVec.push_back( gammaP(time, window, eventNum, true) );
 			
 			//generate decay time (in ps)
-			double decayTime = gRand.Exp(kParaDecayTime);
+			float decayTime = gRand.Exp(kParaDecayTime);
 			
 			//Apply gauss twice to generate two 511-gammas
 			for (int i = 0; i < 2; i++) {
-				double t_511 = gRand.Gaus(time + decayTime, kTimeResolution);
+				float t_511 = gRand.Gaus(time + decayTime, kTimeResolution);
 				if (t_511 < 0) windowVec.push_back(gammaP(t_511, window, eventNum, false));
 			}
 			eventNum++;
@@ -216,15 +216,7 @@ std::vector<gammaP> generateEvents(int windowCount, double activity) {
 }
 
 
-// [activity] = Bq
-// A = 700000.0 Bq = 0.7 MBq
-// T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
-// 10 ^{-12} = ps
-// <N> = 5*10^-6 * 0.7*10^6 = 3.5
-// T_anih = 3 lub 4 ns
-// T_prompt_anihi = 10 ns
-
-ROOT::RDataFrame generate_DataFrame(int window_count = 10, double activity = 700000.0){
+ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700000.0){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
 		std::cout << "Command line arguments should be greater than zero" << std::endl;
@@ -239,29 +231,32 @@ ROOT::RDataFrame generate_DataFrame(int window_count = 10, double activity = 700
 	
 	//Fill dataframe based on generated hits
 	auto df = empty_df.Define("time",[&hitsVec]() {
-						std::vector<double> time;
-						for(const auto& hit : hitsVec){
-							time.push_back(hit.getTime());
+						std::vector<float> time;
+						if(!hitsVec.empty()){
+							for(const auto& hit : hitsVec){
+								time.push_back(hit.getTime());
+							}
 						}
 						return time;
 					}).Define("energy",[&hitsVec]() {
-						std::vector<double> energy;
-						double En;
-						for(const auto& hit : hitsVec){
-							if(hit.isPrompt()){
-								En = 900.0;
-							} else {
-								En = 300.0;
+						std::vector<float> energy;
+						if(!hitsVec.empty()){
+							float En;
+							for(const auto& hit : hitsVec){
+								if(hit.isPrompt()){
+									En = 900.0f;
+								} else {
+									En = 300.0f;
+								}
+								energy.push_back(En);
 							}
-							energy.push_back(En);
 						}
 						return energy;
-					}).Define("timeWindowNumber",[&hitsVec]() {
-						std::vector<double> twn;
-						for(const auto& hit : hitsVec){
-							twn.push_back(hit.getTimeWindowNum());
-						}
-						return twn;
+					}).Define("timeWindowNumber", [&hitsVec]() {
+						if(!hitsVec.empty())
+							return hitsVec[0].getTimeWindowNum();
+						else
+							return 0;
 					});
 	
 	//Save the dataframe (will overwrite)
@@ -272,6 +267,14 @@ ROOT::RDataFrame generate_DataFrame(int window_count = 10, double activity = 700
 	return df;
 }
 
+
+// [activity] = Bq
+// A = 700000.0 Bq = 0.7 MBq
+// T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
+// 10 ^{-12} = ps
+// <N> = 5*10^-6 * 0.7*10^6 = 3.5
+// T_anih = 3 lub 4 ns
+// T_prompt_anihi = 10 ns
 void testDTW(int window_count = 10, double activity = 700000.0){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
