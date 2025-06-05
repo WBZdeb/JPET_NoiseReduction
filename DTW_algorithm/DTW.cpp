@@ -113,15 +113,15 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	//Random coincidences - test data
 	std::cout << "Performing DTW test on test data..." << std::endl;
 	for (int i = 1; i < 2; i++){
-		DTW_type1(df_true, i);
-		DTW_type2(df_true, i);
-		DTW_type3(df_true, i);
-		DTW_type4(df_true, i);
+		DTW_type1(applyCuts({"numberOfHits == 3", "containsPrompt"}, df_node), i);
+		DTW_type2(applyCuts({"numberOfHits == 3", "containsPrompt"}, df_node), i);
+		DTW_type3(applyCuts({"numberOfHits == 3", "containsPrompt"}, df_node), i);
+		DTW_type4(applyCuts({"numberOfHits == 3", "containsPrompt"}, df_node), i);
 	}
 	
 	//Random coincidences - generated data
 	std::cout << "Performing DTW test on generated data..." << std::endl;
-	auto df_gen = generate_DataFrame(3, 70000.0);
+	auto df_gen = generate_DataFrame(276457, 70000.0);
 	for (int i = 1; i < 2; i++){
 		DTW_type1(df_gen, i);
 		DTW_type2(df_gen, i);

@@ -1,0 +1,7 @@
+Cut condition                 All                           Passed              Percentege     
+numberOfHits == 3             896459                        10535               1.17518         %
+isPickOff                     10535                         6838                64.9074         %
+!isScattered                  6838                          1997                29.2044         %
+!isSecondary                  1997                          1182                59.1888         %
+containsPrompt                1182                          743                 62.8596         %
+!isAcc                        743                           480                 64.603          %

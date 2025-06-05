@@ -226,38 +226,39 @@ ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700
 	//Populate vector
 	auto hitsVec = generateEvents(window_count, activity);
 	
+	// Group hits by eventNum
+	std::map<int, std::vector<gammaP>> groupedHits;
+	for(const auto& hit : hitsVec){
+		groupedHits[hit.getEventNum()].push_back(hit);
+	}
+	
+	// Prepare vectors to fill dataframe columns
+	std::vector<std::vector<float>> allTimes;
+	std::vector<std::vector<float>> allEnergies;
+	std::vector<int> allWindowNums;
+	
+	for(const auto& [eventNum, hits] : groupedHits){
+		std::vector<float> times;
+		std::vector<float> energies;
+		
+		for(const auto& hit : hits){
+			times.push_back(hit.getTime());
+			energies.push_back(hit.isPrompt() ? 900.0f : 300.0f);
+		}
+		
+		allTimes.push_back(times);
+		allEnergies.push_back(energies);
+		allWindowNums.push_back(hits.front().getTimeWindowNum());
+	}
+	
 	//Create empty dataframe
-	ROOT::RDataFrame empty_df(hitsVec.size());
+	ROOT::RDataFrame empty_df(allTimes.size());
 	
 	//Fill dataframe based on generated hits
-	auto df = empty_df.Define("time",[&hitsVec]() {
-						std::vector<float> time;
-						if(!hitsVec.empty()){
-							for(const auto& hit : hitsVec){
-								time.push_back(hit.getTime());
-							}
-						}
-						return time;
-					}).Define("energy",[&hitsVec]() {
-						std::vector<float> energy;
-						if(!hitsVec.empty()){
-							float En;
-							for(const auto& hit : hitsVec){
-								if(hit.isPrompt()){
-									En = 900.0f;
-								} else {
-									En = 300.0f;
-								}
-								energy.push_back(En);
-							}
-						}
-						return energy;
-					}).Define("timeWindowNumber", [&hitsVec]() {
-						if(!hitsVec.empty())
-							return hitsVec[0].getTimeWindowNum();
-						else
-							return 0;
-					});
+	auto df = empty_df
+		.DefineSlot("time", [allTimes](unsigned int i) { return allTimes[i]; })
+    	.DefineSlot("energy", [allEnergies](unsigned int i) { return allEnergies[i]; })
+    	.DefineSlot("timeWindowNumber", [allWindowNums](unsigned int i) { return allWindowNums[i]; });
 	
 	//Save the dataframe (will overwrite)
 	//auto file = TFile::Open("testData.root", "RECREATE");
