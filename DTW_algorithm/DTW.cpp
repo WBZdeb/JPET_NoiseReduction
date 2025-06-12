@@ -121,7 +121,13 @@ void DTW(const std::string& fileNameWithPaths = "flatTrees.txt"){
 	
 	//Random coincidences - generated data
 	std::cout << "Performing DTW test on generated data..." << std::endl;
-	auto df_gen = generate_DataFrame(276457, 70000.0);
+	std::string fileName = generate_DataFrame(276457, 10000.0);
+
+    TChain chain_gen(treeName.c_str());
+    chain_gen.Add(fileName.c_str());
+
+    ROOT::RDataFrame df_gen(chain_gen);		
+	
 	for (int i = 1; i < 2; i++){
 		DTW_type1(df_gen, i);
 		DTW_type2(df_gen, i);

@@ -181,18 +181,18 @@ static std::vector<gammaP> generateEvents(int windowCount, double activity) {
 	double meanItPerWindow = activity * (-WIN_LEN) * 1e-12; //Number of events per window
 	std::vector<gammaP> hitsVec, windowVec;
 	int eventNum = 0;
-	TRandom gRand;
+	TRandom gRand(time(0));
 
 	for(int window = 0; window < windowCount; window++){
         //itPerWindow -> to jest lambda = <N> w oknie         	
         //e{-n*lambda} * lambda^n/n!
-        auto itPerWindow = gRand.Poisson(meanItPerWindow);
+        auto itPerWindow = gRand.Poisson(meanItPerWindow); //może być 0
 		//generate hits for a given window
 		for(int iter = 0; iter < itPerWindow; iter++){
 		
 			//generate prompt
 			float time = gRand.Uniform(WIN_LEN, 0.0);
-			//std::cout << time << "	" << window << std::endl;
+			//std::cout << "Pushing prompt:   " << time << "	" << window << std::endl;
 			windowVec.push_back( gammaP(time, window, eventNum, true) );
 			
 			//generate decay time (in ps)
@@ -216,7 +216,7 @@ static std::vector<gammaP> generateEvents(int windowCount, double activity) {
 }
 
 
-ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700000.0){
+std::string generate_DataFrame(int window_count, double activity){
 	//If window_count or activity is too small, terminate macro
 	if(window_count <= 0 || activity <= 0){
 		std::cout << "Command line arguments should be greater than zero" << std::endl;
@@ -252,20 +252,24 @@ ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700
 	}
 	
 	//Create empty dataframe
+	std::vector<int> indices(allTimes.size());
+	std::iota(indices.begin(), indices.end(), 0);
 	ROOT::RDataFrame empty_df(allTimes.size());
 	
 	//Fill dataframe based on generated hits
 	auto df = empty_df
-		.DefineSlot("time", [allTimes](unsigned int i) { return allTimes[i]; })
-    	.DefineSlot("energy", [allEnergies](unsigned int i) { return allEnergies[i]; })
-    	.DefineSlot("timeWindowNumber", [allWindowNums](unsigned int i) { return allWindowNums[i]; });
+		.Define("index", [&indices](ULong64_t i) { return indices[static_cast<int>(i)]; }, {"rdfentry_"})
+		.Define("time", [&allTimes](int i) { return allTimes[i]; }, {"index"})
+    	.Define("energy", [&allEnergies](int i) { return allEnergies[i]; }, {"index"})
+    	.Define("timeWindowNumber", [&allWindowNums](int i) { return allWindowNums[i]; }, {"index"});
 	
 	//Save the dataframe (will overwrite)
-	//auto file = TFile::Open("testData.root", "RECREATE");
-	//df.Snapshot("testTree", "testData.root");
-	//file->Close();
+	std::string outputFileName = "generatedData.root";
+	auto file = TFile::Open(outputFileName.c_str(), "RECREATE");
+	df.Snapshot("FlatTree", outputFileName.c_str());
+	file->Close();
 	
-	return df;
+	return outputFileName;
 }
 
 
@@ -273,7 +277,7 @@ ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700
 // A = 700000.0 Bq = 0.7 MBq
 // T_electronic_window = -50000000 = 50 *10^6 ps = 5000 ns = 5 us = 5 * 10^-6 s
 // 10 ^{-12} = ps
-// <N> = 5*10^-6 * 0.7*10^6 = 3.5
+// <N> = 5*10^-6 * 0.7*10^6 = 35
 // T_anih = 3 lub 4 ns
 // T_prompt_anihi = 10 ns
 void testDTW(int window_count = 10, double activity = 700000.0){

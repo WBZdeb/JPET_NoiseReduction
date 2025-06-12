@@ -2,6 +2,7 @@
 #define TESTDTW_H
 
 #include <vector>
+#include <string>
 #include <ROOT/RDataFrame.hxx>
 
 #define WIN_LEN -50000000.0
@@ -35,7 +36,7 @@ std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window)
 
 std::vector<gammaP> generateEvents(int windowCount, double activity);
 
-ROOT::RDF::RNode generate_DataFrame(int window_count = 10, double activity = 700000.0);
+std::string generate_DataFrame(int window_count, double activity);
 
 void testDTW(int window_count = 10, double activity = 700000.0);
 
