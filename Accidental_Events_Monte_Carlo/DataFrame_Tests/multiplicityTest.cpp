@@ -47,8 +47,19 @@ static void multiplicityTest(int window_count, double activity) {
     h->SetFillColor(kAzure + 1);
     h->Draw();
 
-    // Wyrysowanie średniej
+    // Wariancja
     double mean = sum / windowCounts.size();
+    
+    double sqSum = 0.0;
+    for (const auto& [windowNum, count] : windowCounts)
+        sqSum += (count - mean) * (count - mean);
+
+    double variance = sqSum / windowCounts.size();
+    
+    std::cout << "Średnia krotność okna  : " << mean      << '\n'
+              << "Wariancja krotności     : " << variance << std::endl;
+    
+    // Wyrysowanie średniej
     TLine* line = new TLine(minWin - 0.5, mean, maxWin + 0.5, mean);
     line->SetLineColor(kRed);
     line->SetLineWidth(2);
