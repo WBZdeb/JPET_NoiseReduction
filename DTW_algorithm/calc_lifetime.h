@@ -116,11 +116,12 @@ static void run_DTW(
     std::function<WindowMatchResult(int, int, int)> match_window_cond,
     std::function<WindowMatchResult(int, int, int)> prompt_window_cond,
     std::function<int()> type_version,
-    std::function<int(int)> skips_adjust
+    std::function<int(int)> skips_adjust, 
+    std::vector<std::vector<float>>* pairs = nullptr
 ) {
     if (skips < 1) skips = 1;
 
-    const float lookahead = 50000, p_lookbehind = -180000, energyTH = 350.0, promptTH = 511;
+    const float lookahead = 5000.0f, p_lookbehind = -13000.0f, energyTH = 350.0f, promptTH = 511.0f;
     auto time_Vec = *(df.Take<std::vector<float>>("time"));
     auto energy = *(df.Take<std::vector<float>>("energy"));
     auto window_num = *(df.Take<int>("timeWindowNumber"));
@@ -181,12 +182,18 @@ static void run_DTW(
                     if (paired[k][l] == 1 || energy[k][l] <= promptTH) continue;
                     
                     float dt = time_Vec[k][l] - time_Vec[i][j];
-                    //Prompt can be 5 ns after or 18 ns before reference 511
+                    //Prompt can be 5 ns after or 13 ns before reference 511
                     if (dt < lookahead && dt > p_lookbehind) {
                         coinc_num++;
                         paired[i][j] = 1;
                         paired[k][l] = 1;
                         paired[save_pos[0]][save_pos[1]] = 1;
+                        
+                        //Znaleść lepszy sposób, żeby nie sprawdzać nullptr za każdym razem
+                        if(pairs != nullptr){
+                        	std::vector<float> pair = {time_Vec[k][l], time_Vec[i][j], time_Vec[save_pos[0]][save_pos[1]]};
+                        	pairs->push_back(pair);
+                        }
                     }
                 }
             }
@@ -200,7 +207,7 @@ static void run_DTW(
 
 
 //Only second 511 is delayed --> gives randoms of types IIa and III
-void DTW_type1(RNode rnode, int skips) {
+void DTW_type1(RNode rnode, int skips, std::vector<std::vector<float>>* pairs = nullptr) {
     run_DTW(rnode, skips,
         [](int win_k, int cw, int skips) {
             if (win_k > cw + skips) return WindowMatchResult::Greater;
@@ -213,12 +220,13 @@ void DTW_type1(RNode rnode, int skips) {
             return WindowMatchResult::Equal;
         },
         []() { return 1; },
-        [](int type) { return (type == 3 ? 1 : 0); }
+        [](int type) { return (type == 3 ? 1 : 0); }, 
+        pairs
     );
 }
 
 //Both second 511 and prompt are delayed --> gives randoms of types IIb and III
-void DTW_type2(RNode rnode, int skips) {
+void DTW_type2(RNode rnode, int skips, std::vector<std::vector<float>>* pairs = nullptr) {
     run_DTW(rnode, skips,
     	[](int win_k, int cw, int skips) {
             if (win_k > cw + skips) return WindowMatchResult::Greater;
@@ -231,13 +239,14 @@ void DTW_type2(RNode rnode, int skips) {
             return WindowMatchResult::Equal;
         },
         []() { return 2; },
-        [](int type) { return (type == 3 ? 1 : 0); }
+        [](int type) { return (type == 3 ? 1 : 0); }, 
+        pairs
     );
 }
 
 
 //Second 511 and prompt are delayed with different shifts --> gives randoms of type III
-void DTW_type3(RNode rnode, int skips) {
+void DTW_type3(RNode rnode, int skips, std::vector<std::vector<float>>* pairs = nullptr) {
     run_DTW(rnode, skips,
     	[](int win_k, int cw, int skips) {
             if (win_k > cw + skips) return WindowMatchResult::Greater;
@@ -250,13 +259,14 @@ void DTW_type3(RNode rnode, int skips) {
             return WindowMatchResult::Equal;
         },
         []() { return 3; },
-        [](int type) { return (type == 3 ? 1 : 0); }
+        [](int type) { return (type == 3 ? 1 : 0); }, 
+        pairs
     );
 }
 
 
 //Only prompt is delayed --> gives randoms of types I and III
-void DTW_type4(RNode rnode, int skips) {
+void DTW_type4(RNode rnode, int skips, std::vector<std::vector<float>>* pairs = nullptr) {
     run_DTW(rnode, skips,
     	[](int win_k, int cw, int skips) {
             if (win_k > cw) return WindowMatchResult::Greater;
@@ -269,7 +279,8 @@ void DTW_type4(RNode rnode, int skips) {
             return WindowMatchResult::Equal;
         },
         []() { return 4; },
-        [](int type) { return (type == 3 ? 1 : 0); }
+        [](int type) { return (type == 3 ? 1 : 0); }, 
+        pairs
     );
 }
 

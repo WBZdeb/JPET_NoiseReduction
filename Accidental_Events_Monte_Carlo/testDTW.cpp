@@ -59,8 +59,8 @@ static bool compareGammaP(const gammaP& a, const gammaP& b){
 int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int randomsCount = 0;
     int windowStartIndex = 0;
-    float gammaCoincWindowLen = 500.0f;
-    float promptCoincWindowLen = 1300.0f;	
+    float gammaCoincWindowLen = 5000.0f;
+    float promptCoincWindowLen = 13000.0f;	
 
     //Iterate through each gammaP in hitsVec
     for( int i = 0; i < hitsVec.size(); ++i ) {

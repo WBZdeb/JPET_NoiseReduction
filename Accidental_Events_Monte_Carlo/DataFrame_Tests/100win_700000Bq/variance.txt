@@ -1,3 +1,0 @@
-Średnia krotność okna  : 34.77
-Wariancja krotności     : 40.2371
-
