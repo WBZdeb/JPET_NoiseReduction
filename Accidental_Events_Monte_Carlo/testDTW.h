@@ -30,6 +30,10 @@ bool compareGammaP(const gammaP& a, const gammaP& b);
 
 int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr);
 
+int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr);
+
+int findCoincidences(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr);
+
 std::vector<double> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window);
 
 std::vector<double> calcGammaIntervals(std::vector<gammaP>& hitsVec, int window);

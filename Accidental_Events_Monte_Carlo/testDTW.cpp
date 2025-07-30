@@ -81,29 +81,29 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
                     
                     //Find a not-paired prompt gamma within 1.8 ns around reference 511
                     for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
-                        if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - promptCoincWindowLen &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                        if ( !hitsVec[k].isPrompt() || hitsVec[k].isPaired() ) continue;
+                        if ( hitsVec[k].getTime() < (hitsVec[i].getTime() - promptCoincWindowLen) ) continue;
+                        if ( hitsVec[k].getTime() > (hitsVec[i].getTime() + gammaCoincWindowLen) ) break;
                             
-                            //Compare eventNum
-                            if( hitsVec[i].getEventNum() != hitsVec[j].getEventNum() ||
-                                hitsVec[i].getEventNum() != hitsVec[k].getEventNum() ||
-                                hitsVec[j].getEventNum() != hitsVec[k].getEventNum() ) {
+                        //Compare eventNum
+                        if( hitsVec[i].getEventNum() != hitsVec[j].getEventNum() ||
+                            hitsVec[i].getEventNum() != hitsVec[k].getEventNum() ||
+                            hitsVec[j].getEventNum() != hitsVec[k].getEventNum() ) {
                                 
-                                //If any unequal, increment the random count
-                                randomsCount++;
-                            }
+                            //If any unequal, increment the random count
+                            randomsCount++;
+                            
 
-                            //Mark all three as paired
-                            hitsVec[i].setPaired(true);
-                            hitsVec[j].setPaired(true);
-                            hitsVec[k].setPaired(true);
+		                    //Mark all three as paired
+		                    hitsVec[i].setPaired(true);
+		                    hitsVec[j].setPaired(true);
+		                    hitsVec[k].setPaired(true);
 
-                            //Store the paired gammas
-                            if( pairs != nullptr ) {
-                                pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
-                            }
-                            break;
+		                    //Store the paired gammas
+		                    if( pairs != nullptr ) {
+		                        pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+		                    }
+		                    break;
                         }
                     }
                     break;
@@ -151,18 +151,19 @@ int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pa
                                 
                                 //If all equal, increment the random count
                                 truesCount++;
-                            }
+                            
 
-                            //Mark all three as paired
-                            hitsVec[i].setPaired(true);
-                            hitsVec[j].setPaired(true);
-                            hitsVec[k].setPaired(true);
+		                        //Mark all three as paired
+		                        hitsVec[i].setPaired(true);
+		                        hitsVec[j].setPaired(true);
+		                        hitsVec[k].setPaired(true);
 
-                            //Store the paired gammas
-                            if( pairs != nullptr ) {
-                                pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+		                        //Store the paired gammas
+		                        if( pairs != nullptr ) {
+		                            pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+		                        }
+		                        break;
                             }
-                            break;
                         }
                     }
                     break;
@@ -173,6 +174,58 @@ int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pa
     return truesCount;
 }
 
+
+//Function for finding coincidences; returns number, stores pairs inside passed vector
+int findCoincidences(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
+    int coincCount = 0;
+    int windowStartIndex = 0;
+    float gammaCoincWindowLen = 500.0f;
+    float promptCoincWindowLen = 1300.0f;	
+
+    //Iterate through each gammaP in hitsVec
+    for( int i = 0; i < hitsVec.size(); ++i ) {
+    
+    	//Adjust starting index of time window
+    	if( hitsVec[i].getTimeWindowNum() > hitsVec[windowStartIndex].getTimeWindowNum() ){
+    		windowStartIndex = i;
+    	}
+    
+        //Start by finding not yet paired 511 gamma
+        if( hitsVec[i].isPrompt() == false && !hitsVec[i].isPaired() ) {
+        
+            //Find another 511 gamma withing same time window, up to 0.5 ns away
+            for( int j = i + 1; j < hitsVec.size(); ++j ) {
+                if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
+                    hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
+                    hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                    
+                    //Find a not-paired prompt gamma within 1.8 ns around reference 511
+                    for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
+                        if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
+                            hitsVec[k].getTime() >= hitsVec[i].getTime() - promptCoincWindowLen &&
+                            hitsVec[k].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                            
+							coincCount++;
+                            
+							//Mark all three as paired
+							hitsVec[i].setPaired(true);
+							hitsVec[j].setPaired(true);
+							hitsVec[k].setPaired(true);
+
+							//Store the paired gammas
+							if( pairs != nullptr ) {
+								pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+							}
+		                    break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    return coincCount;
+}
 
 // Calculate intervals between two 511
 static std::vector<float> calcPromptIntervals(std::vector<gammaP>& hitsVec, int window) {
