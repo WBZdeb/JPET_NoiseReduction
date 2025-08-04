@@ -12,6 +12,13 @@
 
 using DTW_func = void (*)(TH1F*, RNode, int);
 
+enum class RandomType {
+    I = 0,
+    IIa = 1,
+    IIb = 2,
+    III = 3
+};
+
 //Helper funcs
 static void drawHistogram(TH1F* hDeltaT, std::string histName, size_t eventCount){
 	gStyle->SetOptStat(1110);
@@ -98,6 +105,16 @@ static void fillHistForDTW_4(TH1F* hDeltaT, RNode df, int skips){
     }    
     
     drawHistogram(hDeltaT, "deltaT_Rand_DTW4_hist.png", nEvents);
+}
+
+//Assign random type, given event = {prompt, gamma_1, gamma_2}
+static int assignRandomType(const std::vector<gammaP>& event){
+	RandomType randomType = RandomType::III;
+	if( event[1].getEventNum() == event[2].getEventNum() ) randomType = RandomType::I;
+	if( event[1].getEventNum() == event[0].getEventNum() ) randomType = RandomType::IIa;
+	if( event[0].getEventNum() == event[2].getEventNum() ) randomType = RandomType::IIb;
+	
+	return static_cast<int>(randomType);
 }
 
 //Plotting funcs
@@ -243,6 +260,7 @@ static void plotTruesIntervalsFromGen(int window_count, double activity){
 static void plotTruesAndRandoms(int window_count, double activity){
 	auto hitsVec = generateEvents(window_count, activity);
 	std::vector<std::vector<gammaP>> pairs;
+	std::vector<int> DTWCounts = {0, 0, 0, 0};
 	
 	int nEvents = findCoincidences(hitsVec, &pairs);
 	int nEvents_True = 0, nEvents_Rand = 0;
@@ -285,6 +303,7 @@ static void plotTruesAndRandoms(int window_count, double activity){
 					hDeltaT_Rand->Fill(deltaT);
 					nEvents_Rand++;
 				}
+				DTWCounts[assignRandomType(event)]++;
         	} else {
         		hDeltaT_True->Fill(deltaT);
         		nEvents_True++;
@@ -292,13 +311,39 @@ static void plotTruesAndRandoms(int window_count, double activity){
 		}
     }
     
+    // Zapis danych o randomach
+    std::ofstream outFile("randomTypeData.txt");
+    if (!outFile) {
+        std::cerr << "Error opening file!\n";
+    }
+
+    outFile << "Random type: I	|	Count == " << DTWCounts[0] << std::endl;
+    outFile << "Random type: IIa	|	Count == " << DTWCounts[1] << std::endl;
+    outFile << "Random type: IIb	|	Count == " << DTWCounts[2] << std::endl;
+    outFile << "Random type: III	|	Count == " << DTWCounts[3] << std::endl;
+
+    outFile.close();
+    
+    //Hist
     gStyle->SetOptStat(0);
     TCanvas* c = new TCanvas("c", "DeltaT Comparison", 800, 600);
+	// Fix zero/negative bins
+	for (int i = 0; i <= hDeltaT_True->GetNbinsX() + 1; ++i) {
+		if (hDeltaT_True->GetBinContent(i) <= 0)
+		    hDeltaT_True->SetBinContent(i, 1e-5);
+	}
+	for (int i = 0; i <= hDeltaT_Rand->GetNbinsX() + 1; ++i) {
+		if (hDeltaT_Rand->GetBinContent(i) <= 0)
+		    hDeltaT_Rand->SetBinContent(i, 1e-5);
+	}
+    c->SetLogy();
+    // Set display minimum
+	hDeltaT_True->SetMinimum(1e-5);
+	hDeltaT_Rand->SetMinimum(1e-5);
     
     // Trues hist
     hDeltaT_True->SetLineColor(kBlue);
     hDeltaT_True->SetLineWidth(2);
-    hDeltaT_True->SetMinimum(0);
     hDeltaT_True->SetMaximum(std::max(hDeltaT_True->GetMaximum(), hDeltaT_Rand->GetMaximum()) * 1.1);
     
     hDeltaT_True->Draw();
@@ -323,11 +368,11 @@ static void plotTruesAndRandoms(int window_count, double activity){
 //Main
 static void plotPromptGammaTimeDiff(int window_count, double activity) {
     plotTrueIntervalsFromDF(window_count, activity);
-    plotRandomsIntervalsFromGen(window_count, activity);
-    plotTruesIntervalsFromGen(window_count, activity);
-    plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
-    plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
-    plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
+	plotRandomsIntervalsFromGen(window_count, activity);
+	plotTruesIntervalsFromGen(window_count, activity);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
     plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_4);
     plotTruesAndRandoms(window_count, activity);
 }

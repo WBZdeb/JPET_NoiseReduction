@@ -75,12 +75,18 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
         
             //Find another 511 gamma withing same time window, up to 0.5 ns away
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
-                if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
-                    hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
-                    
+                if( hitsVec[j].getTimeWindowNum() != hitsVec[i].getTimeWindowNum() ) break;
+                if( hitsVec[j].isPrompt() == true || hitsVec[j].isPaired() ) continue;
+                if( hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+
+                    //Find first gamma within the 18 ns window
+                    int firstGammaIdx;
+                    for( firstGammaIdx = i; firstGammaIdx >= windowStartIndex; firstGammaIdx--){
+                    	if( hitsVec[firstGammaIdx].getTime() < hitsVec[i].getTime() - promptCoincWindowLen ) break;
+                    }
+                                      
                     //Find a not-paired prompt gamma within 1.8 ns around reference 511
-                    for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
+                    for( int k = firstGammaIdx - 1; k < hitsVec.size(); ++k ) {
                         if ( !hitsVec[k].isPrompt() || hitsVec[k].isPaired() ) continue;
                         if ( hitsVec[k].getTime() < (hitsVec[i].getTime() - promptCoincWindowLen) ) continue;
                         if ( hitsVec[k].getTime() > (hitsVec[i].getTime() + gammaCoincWindowLen) ) break;
@@ -106,7 +112,9 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
 		                    break;
                         }
                     }
-                    break;
+                    if( hitsVec[j].isPaired() ) break;
+                } else {
+                	break;
                 }
             }
         }
@@ -119,8 +127,8 @@ int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* 
 int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int truesCount = 0;
     int windowStartIndex = 0;
-    float gammaCoincWindowLen = 500.0f;
-    float promptCoincWindowLen = 1300.0f;	
+    float gammaCoincWindowLen = 5000.0f;
+    float promptCoincWindowLen = 13000.0f;	
 
     //Iterate through each gammaP in hitsVec
     for( int i = 0; i < hitsVec.size(); ++i ) {
@@ -133,40 +141,46 @@ int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pa
         //Start by finding not yet paired 511 gamma
         if( hitsVec[i].isPrompt() == false && !hitsVec[i].isPaired() ) {
         
-            //Find another 511 gamma withing same time window, up to 0.5 ns away
+            //Find another 511 gamma withing same time window, up to 5 ns away
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
-                if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
-                    hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                if( hitsVec[j].getTimeWindowNum() != hitsVec[i].getTimeWindowNum() ) break;
+                if( hitsVec[j].isPrompt() == true || hitsVec[j].isPaired() ) continue;
+                if( hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+
+                    //Find first gamma within the 18 ns window
+                    int firstGammaIdx;
+                    for( firstGammaIdx = i; firstGammaIdx >= windowStartIndex; firstGammaIdx--){
+                    	if( hitsVec[firstGammaIdx].getTime() < hitsVec[i].getTime() - promptCoincWindowLen ) break;
+                    }
                     
-                    //Find a not-paired prompt gamma within 1.8 ns around reference 511
-                    for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
-                        if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - promptCoincWindowLen &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                    //Find a not-paired prompt gamma within 18 ns around reference 511
+                    for( int k = firstGammaIdx; k < hitsVec.size(); ++k ) {
+                        if ( !hitsVec[k].isPrompt() || hitsVec[k].isPaired() ) continue;
+                        if ( hitsVec[k].getTime() < (hitsVec[i].getTime() - promptCoincWindowLen) ) continue;
+                        if ( hitsVec[k].getTime() > (hitsVec[i].getTime() + gammaCoincWindowLen) ) break;
                             
-                            //Compare eventNum
-                            if( hitsVec[i].getEventNum() == hitsVec[j].getEventNum() &&
-                                hitsVec[i].getEventNum() == hitsVec[k].getEventNum() ) {
+						//Compare eventNum
+						if( hitsVec[i].getEventNum() == hitsVec[j].getEventNum() &&
+							hitsVec[i].getEventNum() == hitsVec[k].getEventNum() ) {
                                 
-                                //If all equal, increment the random count
-                                truesCount++;
+							//If all equal, increment the random count
+							truesCount++;
                             
+							//Mark all three as paired
+							hitsVec[i].setPaired(true);
+							hitsVec[j].setPaired(true);
+							hitsVec[k].setPaired(true);
 
-		                        //Mark all three as paired
-		                        hitsVec[i].setPaired(true);
-		                        hitsVec[j].setPaired(true);
-		                        hitsVec[k].setPaired(true);
-
-		                        //Store the paired gammas
-		                        if( pairs != nullptr ) {
-		                            pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
-		                        }
-		                        break;
-                            }
+							//Store the paired gammas
+							if( pairs != nullptr ) {
+								pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+							}
+							break;
                         }
                     }
-                    break;
+                    if( hitsVec[j].isPaired() ) break;
+                } else {
+                	break;
                 }
             }
         }
@@ -179,8 +193,8 @@ int findTrues(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pa
 int findCoincidences(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int coincCount = 0;
     int windowStartIndex = 0;
-    float gammaCoincWindowLen = 500.0f;
-    float promptCoincWindowLen = 1300.0f;	
+    float gammaCoincWindowLen = 5000.0f;
+    float promptCoincWindowLen = 13000.0f;	
 
     //Iterate through each gammaP in hitsVec
     for( int i = 0; i < hitsVec.size(); ++i ) {
@@ -193,33 +207,40 @@ int findCoincidences(std::vector<gammaP>& hitsVec, std::vector<std::vector<gamma
         //Start by finding not yet paired 511 gamma
         if( hitsVec[i].isPrompt() == false && !hitsVec[i].isPaired() ) {
         
-            //Find another 511 gamma withing same time window, up to 0.5 ns away
+            //Find another 511 gamma within same time window, up to 5 ns away
             for( int j = i + 1; j < hitsVec.size(); ++j ) {
-                if( hitsVec[j].isPrompt() == false && !hitsVec[j].isPaired() &&
-                    hitsVec[j].getTimeWindowNum() == hitsVec[i].getTimeWindowNum() &&
-                    hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
+                if( hitsVec[j].getTimeWindowNum() != hitsVec[i].getTimeWindowNum() ) break;
+                if( hitsVec[j].isPrompt() == true || hitsVec[j].isPaired() ) continue;
+                if( hitsVec[j].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
                     
-                    //Find a not-paired prompt gamma within 1.8 ns around reference 511
-                    for( int k = windowStartIndex; k < hitsVec.size(); ++k ) {
-                        if( hitsVec[k].isPrompt() && !hitsVec[k].isPaired() &&
-                            hitsVec[k].getTime() >= hitsVec[i].getTime() - promptCoincWindowLen &&
-                            hitsVec[k].getTime() <= hitsVec[i].getTime() + gammaCoincWindowLen ) {
-                            
-							coincCount++;
-                            
-							//Mark all three as paired
-							hitsVec[i].setPaired(true);
-							hitsVec[j].setPaired(true);
-							hitsVec[k].setPaired(true);
-
-							//Store the paired gammas
-							if( pairs != nullptr ) {
-								pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
-							}
-		                    break;
-                        }
+                    //Find first gamma within the 18 ns window
+                    int firstGammaIdx;
+                    for( firstGammaIdx = i; firstGammaIdx >= windowStartIndex; firstGammaIdx--){
+                    	if( hitsVec[firstGammaIdx].getTime() < hitsVec[i].getTime() - promptCoincWindowLen ) break;
                     }
-                    break;
+                    
+                    //Find a not-paired prompt gamma within 18 ns around reference 511
+                    for( int k = firstGammaIdx; k < hitsVec.size(); ++k ) {
+                        if ( !hitsVec[k].isPrompt() || hitsVec[k].isPaired() ) continue;
+                        if ( hitsVec[k].getTime() < (hitsVec[i].getTime() - promptCoincWindowLen) ) continue;
+                        if ( hitsVec[k].getTime() > (hitsVec[i].getTime() + gammaCoincWindowLen) ) break;
+                            
+                        coincCount++;
+                            
+                        //Mark all three as paired
+                        hitsVec[i].setPaired(true);
+                        hitsVec[j].setPaired(true);
+                        hitsVec[k].setPaired(true);
+
+                        //Store the paired gammas
+                        if( pairs != nullptr ) {
+                        	pairs->push_back({ hitsVec[i], hitsVec[j], hitsVec[k] });
+                        }
+                        break;
+                    }
+                    if( hitsVec[j].isPaired() ) break;
+                } else {
+                	break;
                 }
             }
         }

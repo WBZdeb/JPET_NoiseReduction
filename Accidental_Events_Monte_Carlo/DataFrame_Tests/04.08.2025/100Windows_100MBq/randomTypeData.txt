@@ -1,0 +1,4 @@
+Random type: I	|	Count == 6886	//3400
+Random type: IIa	|	Count == 8060
+Random type: IIb	|	Count == 6852
+Random type: III	|	Count == 126	//63
