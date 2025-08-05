@@ -59,7 +59,7 @@ static bool compareGammaP(const gammaP& a, const gammaP& b){
 int findRandoms(std::vector<gammaP>& hitsVec, std::vector<std::vector<gammaP>>* pairs = nullptr) {
     int randomsCount = 0;
     int windowStartIndex = 0;
-    float gammaCoincWindowLen = 5000.0f;
+    float gammaCoincWindowLen = 5000.0f;	//5000.0f
     float promptCoincWindowLen = 13000.0f;	
 
     //Iterate through each gammaP in hitsVec
@@ -310,7 +310,7 @@ static std::vector<float> calcGammaIntervals(std::vector<gammaP>& hitsVec, int w
 
 std::vector<gammaP> generateEvents(int windowCount, double activity) {
 	const double kParaDecayTime = 125.0;
-	const double kTimeResolution = 62.5;	// 250 ps
+	const double kTimeResolution = 250;	// 250 ps
 
 	double meanItPerWindow = activity * (-WIN_LEN) * 1e-12; //Number of events per window
 	std::vector<gammaP> hitsVec, windowVec;

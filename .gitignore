@@ -1,0 +1,17 @@
+# Ignore all build folders
+build_*/ 
+
+# Ignore .o, .exe files
+*.o
+*.exe
+
+# Ignore specific files and folders
+/Accidental_Events_Monte_Carlo/fit.log
+/Accidental_Events_Monte_Carlo/fit.txt
+out.root
+/DTW_algorithm/Filter_hist/
+
+
+# Example code, not part of the project
+/load_data/
+

@@ -2,6 +2,7 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TCanvas.h>
+#include <TMath.h>
 #include <TH1F.h>
 #include <TStyle.h>
 #include <iostream>
@@ -37,6 +38,16 @@ static void drawHistogram(TH1F* hDeltaT, std::string histName, size_t eventCount
     newStats->Draw("same");
 	c->Modified();
 	c->Update();
+	
+	//Dopasowanie osi X
+	int firstBin = hDeltaT->FindFirstBinAbove(0);
+	int lastBin  = hDeltaT->FindLastBinAbove(0);
+
+	double minX = hDeltaT->GetBinLowEdge(firstBin);
+	double maxX = hDeltaT->GetBinLowEdge(lastBin + 1);
+	double margin = (maxX - minX) * 0.1;
+	
+	hDeltaT->GetXaxis()->SetRangeUser(minX - margin, maxX + margin);
 
     c->SaveAs(histName.c_str());
     
@@ -175,7 +186,7 @@ static void plotRandomsIntervalsFromDTW(int window_count, double activity, DTW_f
     ROOT::RDataFrame df(chain);
 
     // Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 50, -2500, 2500);
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
     fillHistForDTW(hDeltaT, df, 2);
     delete hDeltaT;
 }
@@ -187,7 +198,7 @@ static void plotRandomsIntervalsFromGen(int window_count, double activity){
 	int nEvents = findRandoms(hitsVec, &pairs);
 	
 	// Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 50, -2500, 2500);
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
     
     // Wypelnienie histogramu
     for (int i = 0; i < nEvents; ++i) {
@@ -226,7 +237,7 @@ static void plotTruesIntervalsFromGen(int window_count, double activity){
 	int nEvents = findTrues(hitsVec, &pairs);
 	
 	// Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 50, -2500, 2500);
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
     
     // Wypelnienie histogramu
     for (int i = 0; i < nEvents; ++i) {
@@ -266,8 +277,8 @@ static void plotTruesAndRandoms(int window_count, double activity){
 	int nEvents_True = 0, nEvents_Rand = 0;
 	
 	// Histogramy
-    TH1F* hDeltaT_True = new TH1F("hDeltaT_True", "Prompt-gamma time diff", 50, -2500, 2500);
-    TH1F* hDeltaT_Rand = new TH1F("hDeltaT_Rand", "Prompt-gamma time diff", 50, -2500, 2500);
+    TH1F* hDeltaT_True = new TH1F("hDeltaT_True", "Prompt-gamma time diff", 100, -5000, 18000);
+    TH1F* hDeltaT_Rand = new TH1F("hDeltaT_Rand", "Prompt-gamma time diff", 100, -5000, 18000);
     
     // Wypelnienie histogramow
     for (int i = 0; i < nEvents; ++i) {
@@ -367,13 +378,13 @@ static void plotTruesAndRandoms(int window_count, double activity){
 
 //Main
 static void plotPromptGammaTimeDiff(int window_count, double activity) {
-    plotTrueIntervalsFromDF(window_count, activity);
+    //plotTrueIntervalsFromDF(window_count, activity);
 	plotRandomsIntervalsFromGen(window_count, activity);
-	plotTruesIntervalsFromGen(window_count, activity);
-	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
-	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
-	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
-    plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_4);
+	//plotTruesIntervalsFromGen(window_count, activity);
+	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
+	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
+	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
+    //plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_4);
     plotTruesAndRandoms(window_count, activity);
 }
 
