@@ -40,6 +40,7 @@ static void drawHistogram(TH1F* hDeltaT, std::string histName, size_t eventCount
 	c->Update();
 	
 	//Dopasowanie osi X
+
 	int firstBin = hDeltaT->FindFirstBinAbove(0);
 	int lastBin  = hDeltaT->FindLastBinAbove(0);
 
@@ -88,6 +89,9 @@ static void fillHistForDTW_2(TH1F* hDeltaT, RNode df, int skips){
 static void fillHistForDTW_3(TH1F* hDeltaT, RNode df, int skips){
     std::vector<std::vector<float>> times;
     DTW_type3(df, skips, &times);
+    
+    TH1F* hDeltaT_ref = new TH1F("hDeltaT_ref", "Prompt-gamma time diff (Reference only)", 100, -2000, 3000);
+    TH1F* hDeltaT_nonRef = new TH1F("hDeltaT_nonRef", "Prompt-gamma time diff (Non-reference only)", 100, -2000, 3000);
 
     size_t nEvents = times.size();
     for (size_t i = 0; i < nEvents; ++i) {
@@ -95,16 +99,30 @@ static void fillHistForDTW_3(TH1F* hDeltaT, RNode df, int skips){
 		for (int j = 1; j < 3; j++){
 			float deltaT = times[i][j] - promptTime;
 			hDeltaT->Fill(deltaT);
+			
+			if(j == 1) {
+				hDeltaT_ref->Fill(deltaT);
+			} else {
+				hDeltaT_nonRef->Fill(deltaT);
+			}
 		}
     }    
     
     drawHistogram(hDeltaT, "deltaT_Rand_DTW3_hist.png", nEvents);
+    drawHistogram(hDeltaT_ref, "deltaT_Rand_ref_DTW3_hist.png", nEvents);
+    drawHistogram(hDeltaT_nonRef, "deltaT_Rand_nonRef_DTW3_hist.png", nEvents);
+    
+    delete hDeltaT_ref;
+    delete hDeltaT_nonRef;
 }
 
 //Prompr delayed - all randoms
 static void fillHistForDTW_4(TH1F* hDeltaT, RNode df, int skips){
     std::vector<std::vector<float>> times;
     DTW_type4(df, skips, &times);
+    
+    TH1F* hDeltaT_ref = new TH1F("hDeltaT_ref", "Prompt-gamma time diff (Reference only)", 100, -2000, 3000);
+    TH1F* hDeltaT_nonRef = new TH1F("hDeltaT_nonRef", "Prompt-gamma time diff (Non-reference only)", 100, -2000, 3000);
 
     size_t nEvents = times.size();
     for (size_t i = 0; i < nEvents; ++i) {
@@ -112,10 +130,21 @@ static void fillHistForDTW_4(TH1F* hDeltaT, RNode df, int skips){
 		for (int j = 1; j < 3; j++){
 			float deltaT = times[i][j] - promptTime;
 			hDeltaT->Fill(deltaT);
+			
+			if(j == 1) {
+				hDeltaT_ref->Fill(deltaT);
+			} else {
+				hDeltaT_nonRef->Fill(deltaT);
+			}
 		}
     }    
     
     drawHistogram(hDeltaT, "deltaT_Rand_DTW4_hist.png", nEvents);
+    drawHistogram(hDeltaT_ref, "deltaT_Rand_ref_DTW4_hist.png", nEvents);
+    drawHistogram(hDeltaT_nonRef, "deltaT_Rand_nonRef_DTW4_hist.png", nEvents);
+    
+    delete hDeltaT_ref;
+    delete hDeltaT_nonRef;
 }
 
 //Assign random type, given event = {prompt, gamma_1, gamma_2}
@@ -139,7 +168,7 @@ static void plotTrueIntervalsFromDF(int window_count, double activity){
     ROOT::RDataFrame df(chain);
 
     // Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 50, -400, 1000);
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 50, -1000, 1500);
 
     // Wypelnienie histogramu
     auto times = df.Take<std::vector<float>>("time");
@@ -186,7 +215,7 @@ static void plotRandomsIntervalsFromDTW(int window_count, double activity, DTW_f
     ROOT::RDataFrame df(chain);
 
     // Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -2000, 3000);
     fillHistForDTW(hDeltaT, df, 2);
     delete hDeltaT;
 }
@@ -197,37 +226,64 @@ static void plotRandomsIntervalsFromGen(int window_count, double activity){
 	
 	int nEvents = findRandoms(hitsVec, &pairs);
 	
-	// Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
+	// Histogramy dla różnic czasów prompt - gamma
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -2000, 3000);
+    TH1F* hDeltaT_ref = new TH1F("hDeltaT_ref", "Prompt-gamma time diff (Reference only)", 100, -2000, 3000);
+    TH1F* hDeltaT_nonRef = new TH1F("hDeltaT_nonRef", "Prompt-gamma time diff (Non-reference only)", 100, -2000, 3000);
+    
+    TH1F* hDeltaT_typeI = new TH1F("hDeltaT_typeI", "Prompt-gamma time diff (type I)", 100, -2000, 3000);
+    TH1F* hDeltaT_typeIIa = new TH1F("hDeltaT_typeIIa", "Prompt-gamma time diff (type IIa)", 100, -2000, 3000);
+    TH1F* hDeltaT_typeIIb = new TH1F("hDeltaT_typeIIb", "Prompt-gamma time diff (type IIb)", 100, -2000, 3000);
+    TH1F* hDeltaT_typeIII = new TH1F("hDeltaT_typeIII", "Prompt-gamma time diff (type III)", 100, -2000, 3000);
     
     // Wypelnienie histogramu
     for (int i = 0; i < nEvents; ++i) {
     	const auto& event = pairs[i];
-    	
-    	int promptIdx = -1;
-        std::vector<int> gammaIdxs;
 
 		if (event.size() != 3) continue;
 
-        for (size_t j = 0; j < event.size(); ++j) {
-            if (event[j].isPrompt()) {
-                promptIdx = j;
-            } else {
-                gammaIdxs.push_back(j);
-            }
-        }
-
-        float promptTime = event[promptIdx].getTime();
-        for (int gammaIdx : gammaIdxs) {
-		    if ( event[gammaIdx].getEventNum() != event[promptIdx].getEventNum() ){
-		    	float deltaT = event[gammaIdx].getTime() - promptTime;
+        float promptTime = event[2].getTime();
+        for (int j = 0; j < 2; j++) {
+		    if ( event[j].getEventNum() != event[2].getEventNum() ){
+		    	float deltaT = event[j].getTime() - promptTime;
 				hDeltaT->Fill(deltaT);
+				
+				if(j == 0) hDeltaT_ref->Fill(deltaT);
+				if(j == 1) hDeltaT_nonRef->Fill(deltaT);
+				
+				switch(assignRandomType(event)) {
+					case 0:
+						hDeltaT_typeI->Fill(deltaT);
+						break;
+					case 1:
+						hDeltaT_typeIIa->Fill(deltaT);
+						break;
+					case 2:
+						hDeltaT_typeIIb->Fill(deltaT);
+						break;
+					case 3:
+						hDeltaT_typeIII->Fill(deltaT);
+						break;
+					
+				}
 			}
 		}
     }
     
 	drawHistogram(hDeltaT, "deltaT_Rand_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_ref, "deltaT_Rand_ref_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_nonRef, "deltaT_Rand_nonRef_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_typeI, "deltaT_Rand_typeI_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_typeIIa, "deltaT_Rand_typeIIa_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_typeIIb, "deltaT_Rand_typeIIb_Gen_hist.png", hitsVec.size()/3);
+	drawHistogram(hDeltaT_typeIII, "deltaT_Rand_typeIII_Gen_hist.png", hitsVec.size()/3);
     delete hDeltaT;
+    delete hDeltaT_ref;
+    delete hDeltaT_nonRef;
+    delete hDeltaT_typeI;
+    delete hDeltaT_typeIIa;
+    delete hDeltaT_typeIIb;
+    delete hDeltaT_typeIII;
 }
 
 static void plotTruesIntervalsFromGen(int window_count, double activity){
@@ -236,8 +292,9 @@ static void plotTruesIntervalsFromGen(int window_count, double activity){
 	
 	int nEvents = findTrues(hitsVec, &pairs);
 	
-	// Histogram dla różnic czasów prompt - gamma
-    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -5000, 18000);
+	// Histogramy dla różnic czasów prompt - gamma
+    TH1F* hDeltaT = new TH1F("hDeltaT", "Prompt-gamma time diff", 100, -2000, 3000);
+    TH1F* hDeltaT_Avg = new TH1F("hDeltaT_Avg", "Prompt-gamma time diff (Avg of anih. time)", 100, -2000, 3000);
     
     // Wypelnienie histogramu
     for (int i = 0; i < nEvents; ++i) {
@@ -257,14 +314,20 @@ static void plotTruesIntervalsFromGen(int window_count, double activity){
         }
 
         float promptTime = event[promptIdx].getTime();
+        float avgTime = 0.0f;
         for (int gammaIdx : gammaIdxs) {
         	float deltaT = event[gammaIdx].getTime() - promptTime;
+        	avgTime += event[gammaIdx].getTime();
 			hDeltaT->Fill(deltaT);
 		}
+		
+		hDeltaT_Avg->Fill(avgTime/2 - promptTime);
     }
     
     drawHistogram(hDeltaT, "deltaT_Trues_Gen_hist.png", hitsVec.size()/3);
+    drawHistogram(hDeltaT_Avg, "deltaT_Trues_Gen_hist_avg.png", hitsVec.size()/3);
     delete hDeltaT;
+    delete hDeltaT_Avg;
 }
 
 
@@ -277,8 +340,8 @@ static void plotTruesAndRandoms(int window_count, double activity){
 	int nEvents_True = 0, nEvents_Rand = 0;
 	
 	// Histogramy
-    TH1F* hDeltaT_True = new TH1F("hDeltaT_True", "Prompt-gamma time diff", 100, -5000, 18000);
-    TH1F* hDeltaT_Rand = new TH1F("hDeltaT_Rand", "Prompt-gamma time diff", 100, -5000, 18000);
+    TH1F* hDeltaT_True = new TH1F("hDeltaT_True", "Prompt-gamma time diff", 100, -2000, 3000);
+    TH1F* hDeltaT_Rand = new TH1F("hDeltaT_Rand", "Prompt-gamma time diff", 100, -2000, 3000);
     
     // Wypelnienie histogramow
     for (int i = 0; i < nEvents; ++i) {
@@ -378,13 +441,13 @@ static void plotTruesAndRandoms(int window_count, double activity){
 
 //Main
 static void plotPromptGammaTimeDiff(int window_count, double activity) {
-    //plotTrueIntervalsFromDF(window_count, activity);
+    plotTrueIntervalsFromDF(window_count, activity);
 	plotRandomsIntervalsFromGen(window_count, activity);
-	//plotTruesIntervalsFromGen(window_count, activity);
-	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
-	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
-	//plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
-    //plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_4);
+	plotTruesIntervalsFromGen(window_count, activity);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_1);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_2);
+	plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_3);
+    plotRandomsIntervalsFromDTW(window_count, activity, fillHistForDTW_4);
     plotTruesAndRandoms(window_count, activity);
 }
 

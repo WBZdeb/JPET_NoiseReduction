@@ -121,7 +121,7 @@ static void run_DTW(
 ) {
     if (skips < 1) skips = 1;
 
-    const float lookahead = 5000.0f, p_lookbehind = -13000.0f, energyTH = 350.0f, promptTH = 511.0f;
+    const float lookahead = 1000.0f, p_lookbehind = -1500.0f, energyTH = 350.0f, promptTH = 511.0f;
     auto time_Vec = *(df.Take<std::vector<float>>("time"));
     auto energy = *(df.Take<std::vector<float>>("energy"));
     auto window_num = *(df.Take<int>("timeWindowNumber"));
